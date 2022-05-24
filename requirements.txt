@@ -1,1 +1,0 @@
-git+http://srv-debian:8090/systemtools/python-toolbox.git
