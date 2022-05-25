@@ -3,18 +3,14 @@
 """
 #---------------------------------------------------------------------------
 
-from gen_base_import import *  # used for now for differing modules in py/upy
+from SCHCPParserTool.gen_base_import import *  # used for now for differing modules in py/upy
 
-import frag_msg
-from frag_bitmap import find_missing_tiles, sort_tile_list, find_missing_tiles_no_all_1, find_missing_tiles_mic_ko_yes_all_1, make_bit_list_mic_ko
-from compr_core import *
+import SCHCPParserTool.frag_msg
+from SCHCPParserTool.frag_bitmap import find_missing_tiles, sort_tile_list, find_missing_tiles_no_all_1, find_missing_tiles_mic_ko_yes_all_1, make_bit_list_mic_ko
+from SCHCPParserTool.compr_core import *
 
-from gen_utils import dtrace
+from SCHCPParserTool.gen_utils import dtrace
 import binascii
-
-enable_statsct = True
-if enable_statsct:
-    from stats.statsct import Statsct
 
 #---------------------------------------------------------------------------
 

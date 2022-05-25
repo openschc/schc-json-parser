@@ -17,20 +17,10 @@ import random as random
 import struct
 import socket
 
-# --- sched
-#sys.path.append("../../micropython-lib/heapq") # XXX (for pyssched)
-#sys.path.append("../../micropython-lib/ffilib") # XXX (for time)
-#sys.path.append("../../micropython-lib/time") # XXX (for pyssched)
-
-###sys.path.append("../../micropython-lib/sched") # XXX
-###import sched # empty...
-#sys.path.append("schctest/pyssched")
-#import pyssched as sched
-
 # --- default imports
 
-from gen_bitarray import BitBuffer
-from frag_rcs_crc32 import get_mic, get_mic_size
+from SCHCPParserTool.gen_bitarray import BitBuffer
+from SCHCPParserTool.frag_rcs_crc32 import get_mic, get_mic_size
 
 def b2hex(b):
     """This function replace the bytes.hex() function provided in Python3.5 and later

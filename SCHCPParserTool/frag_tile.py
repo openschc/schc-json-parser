@@ -4,11 +4,11 @@
 """
 #---------------------------------------------------------------------------
 
-from gen_base_import import *
-from gen_utils import dprint
+from SCHCPParserTool.gen_base_import import *
+from SCHCPParserTool.gen_utils import dprint
 
-import frag_msg
-from compr_core import *
+import SCHCPParserTool.frag_msg
+from SCHCPParserTool.compr_core import *
 
 #---------------------------------------------------------------------------
 

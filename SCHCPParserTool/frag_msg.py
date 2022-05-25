@@ -3,11 +3,11 @@
    :platform: Python, Micropython
 """
 #---------------------------------------------------------------------------
-from gen_base_import import *  # used for now for differing modules in py/upy
-from compr_core import *
-import gen_bitarray
-from compr_core import *
-from gen_utils import dprint
+from SCHCPParserTool.gen_base_import import *  # used for now for differing modules in py/upy
+from SCHCPParserTool.compr_core import *
+import SCHCPParserTool.gen_bitarray
+from SCHCPParserTool.compr_core import *
+from SCHCPParserTool.gen_utils import dprint
 
 #---------------------------------------------------------------------------
 

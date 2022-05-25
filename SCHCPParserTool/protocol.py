@@ -4,20 +4,19 @@
 """
 # ---------------------------------------------------------------------------
 
-from gen_base_import import *  # used for now for differing modules in py/upy
-from gen_utils import dprint, dpprint, set_debug_output
+from SCHCPParserTool.gen_base_import import *  # used for now for differing modules in py/upy
+from SCHCPParserTool.gen_utils import dprint, dpprint, set_debug_output, dtrace
 
 # ---------------------------------------------------------------------------
 
-from frag_recv import ReassemblerAckOnError
-from frag_recv import ReassemblerNoAck
-from frag_send import FragmentAckOnError
-from frag_send import FragmentNoAck
-import frag_msg
-from compr_parser import *
-from compr_core import Compressor, Decompressor
+from SCHCPParserTool.frag_recv import ReassemblerAckOnError
+from SCHCPParserTool.frag_recv import ReassemblerNoAck
+from SCHCPParserTool.frag_send import FragmentAckOnError
+from SCHCPParserTool.frag_send import FragmentNoAck
+import SCHCPParserTool.frag_msg
+from SCHCPParserTool.compr_parser import *
+from SCHCPParserTool.compr_core import Compressor, Decompressor
 
-from gen_utils import dtrace
 import binascii
 
 class ConnectivityManager:

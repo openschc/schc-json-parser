@@ -7,13 +7,12 @@ format is the following:
 since field ID can be repeated, the index is the tuple field ID and position.
 """
 
-from gen_base_import import *
-from compr_core import *  # for common variable describing rules (no function called from this module)
+from SCHCPParserTool.gen_base_import import *
+from SCHCPParserTool.compr_core import *  # for common variable describing rules (no function called from this module)
 from binascii import hexlify, unhexlify
 from struct import pack, unpack
 import ipaddress
 from scapy.all import *
-
 
 option_names = {
     1: T_COAP_OPT_IF_MATCH,

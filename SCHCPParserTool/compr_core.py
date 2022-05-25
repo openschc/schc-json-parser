@@ -2,8 +2,8 @@
 .. module:: compr_core
    :platform: Python, Micropython
 """
-from gen_base_import import *
-from gen_utils import dprint
+from SCHCPParserTool.gen_base_import import *
+from SCHCPParserTool.gen_utils import dprint
 
 import pprint
 

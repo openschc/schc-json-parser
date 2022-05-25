@@ -7,7 +7,7 @@ requirementList = [requirement for requirement in requirementsStr.split("\n") if
 
 setup(name='schc-json-parser',
       version=version,
-      description='SCHC Library to parse an unparse LoRaWAN SCHC Packets into and from a JSON Format',
+      description='SCHC Library to parse and unparse LoRaWAN SCHC Packets into and from a JSON Format',
       author='Ivan Martinez and Laurent Toutain',
       author_email='ivan-marino.martinez-bolivar@imt-atlantique.fr',
       url='https://github.com/openschc/schc-json-parser',

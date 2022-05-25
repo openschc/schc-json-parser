@@ -5,24 +5,16 @@
 #---------------------------------------------------------------------------
 import math
 
-from gen_base_import import *  # used for now for differing modules in py/upy
-from gen_utils import dprint, dtrace
+from SCHCPParserTool.gen_base_import import *  # used for now for differing modules in py/upy
+from SCHCPParserTool.gen_utils import dprint, dtrace
 
-import protocol
-import frag_msg
-from frag_tile import TileList
-from frag_bitmap import make_bit_list
+import SCHCPParserTool.frag_msg as frag_msg
+from SCHCPParserTool.frag_tile import TileList
+from SCHCPParserTool.frag_bitmap import make_bit_list
 
-try:
-    import utime as time
-except ImportError:
-    import time
+import time
 
-enable_statsct = True
-if enable_statsct:
-    from stats.statsct import Statsct
-
-from compr_core import *
+from SCHCPParserTool.compr_core import *
 #---------------------------------------------------------------------------
 
 max_ack_requests = 8
