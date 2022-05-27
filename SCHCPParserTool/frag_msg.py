@@ -434,6 +434,8 @@ class frag_receiver_rx(frag_rx):
             """ Changement à corriger
             if self.packet_bbuf.count_remaining_bits() < self.rule[T_FRAG_L2WORDSIZE]:
             """
+            print ("remaining :",  self.packet_bbuf.count_remaining_bits())
+            print ("size :",  self.rule[T_FRAG][T_FRAG_PROF][T_FRAG_L2WORDSIZE])
             if self.packet_bbuf.count_remaining_bits() < self.rule[T_FRAG][T_FRAG_PROF][T_FRAG_L2WORDSIZE]:
                 # this is a Sender Abort message.
                 self.abort = True

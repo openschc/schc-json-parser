@@ -835,10 +835,10 @@ class Decompressor:
         assert (rule_send == rule["RuleID"])
 
         for r in rule["Compression"]:
-            dprint(r)
+            #dprint(r)
             if r[T_DI] in [T_DIR_BI, direction]:
                 full_field = self.__func_rx_cda[r[T_CDA]](r, schc)
-                dprint("<<<", full_field)
+                #dprint("<<<", full_field)
                 self.parsed_packet[(r[T_FID], r[T_FP])] = full_field
                 #pprint.pprint (self.parsed_packet)
 

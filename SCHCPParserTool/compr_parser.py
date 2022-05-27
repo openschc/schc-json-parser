@@ -88,9 +88,7 @@ class Parser:
 
         pos = 0
         self.header_fields = {}
-
         next_header = start
-
         if  next_header == "IPv6" :
             version = unpack ("!B", pkt[:1])
             #assert version[0]>>4 == 6                 # only IPv6
@@ -364,7 +362,7 @@ class Unparser:
 
 
                     for i in range (0, opt_len):
-                        print (i)
+                        #print (i)
                         if type(opt_val) == str:
                             coap_h += struct.pack("!B", ord(opt_val[i]))
                         elif type(opt_val) == int:
