@@ -16,5 +16,3 @@ parser = Parser()
 parser.rule_file = "icmp3.json"
 JSON_File = Parser.parse_schc_msg(parser, schc_pkt = all0_noack_a, device_id = device_id)
 print(JSON_File)
-
-
