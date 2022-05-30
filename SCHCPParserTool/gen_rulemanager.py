@@ -1137,9 +1137,10 @@ class RuleManager:
                                     r[T_FL], pkt[(r[T_FID], r[T_FP])][1],
                                     arg):
                                         matches += 1
+                                        dprint (pkt[(r[T_FID], r[T_FP])][0])
                                 else:
                                     if failed_field:
-                                        print("rule {}/{}: field {}  does not match TV={} FV={} rlen={} flen={} arg={}".format(
+                                        dprint("rule {}/{}: field {}  does not match TV={} FV={} rlen={} flen={} arg={}".format(
                                             rule[T_RULEID], rule[T_RULEIDLENGTH],
                                             r[T_FID],
                                             r[T_TV], pkt[(r[T_FID], r[T_FP])][0],

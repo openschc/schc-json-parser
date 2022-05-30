@@ -3,19 +3,33 @@ from SCHCPParserTool.compr_parser import *
 from SCHCPParserTool.gen_bitarray import BitBuffer
 from SCHCPParserTool import gen_rulemanager as RM
 from SCHCPParserTool import frag_msg as FM
+
+from Crypto.Hash import CMAC
+from Crypto.Cipher import AES
+
 import json
 import binascii
 
-class Parser:
+class SCHCParser:
 
     def __init__(self):
         self.rule_file = "icmp3.json"
         self.rm = RM.RuleManager()
-        self.rm.Add(file=self.rule_file)
-   
-    def parse_schc_msg(self, schc_pkt, device_id, appskey=None, ruleID=None):
+
+    def getdeviid (self, AppSKey, DevEUI):
+        cobj = CMAC.new(bytes.fromhex(AppSKey), ciphermod=AES)
+        cobj.update(bytes.fromhex(DevEUI))
+        res = cobj.hexdigest()
+        IID = res[0:16]
+        return IID
+
+        
+    def parse_schc_msg(self, schc_pkt, device_id, appskey=None, ruleID=None, chk_sum = None, udp_len = None):
 
         #if ruleID then add 8 bits at first before BitBuffer
+        if ruleID is not None:
+            schc_pkt = ruleID + schc_pkt
+
         schc_bbuf = BitBuffer(schc_pkt)
         rule = self.rm.FindRuleFromSCHCpacket(schc=schc_bbuf, device=device_id)
         ruleid_value = rule[T_RULEID]
@@ -49,7 +63,7 @@ class Parser:
             #schc_frag.cbit
             #schc_frag.packet
             abort = schc_frag.abort
-            print(payload)
+            #print(payload)
             payload_hexa = None
             if payload is not None:
                 payload_hexa = binascii.hexlify(payload._content).decode('ascii')
@@ -90,11 +104,15 @@ class Parser:
                 comp = {}
                 for i, key in enumerate(keys):
                     try:
-                        comp.update({YANG_ID[key[0]][1]: values[i][0]})
-                        #print(YANG_ID[key[0]][1])
+                        if YANG_ID[key[0]][1] == "fid-udp-length":
+                            comp.update({YANG_ID[key[0]][1]: udp_len})
+                        elif YANG_ID[key[0]][1] == "fid-udp-checksum":
+                            comp.update({YANG_ID[key[0]][1]: chk_sum})
+                        else:
+                            comp.update({YANG_ID[key[0]][1]: values[i][0]})
                     except:
                         comp.update({keys[i][0]: values[i][0]})
-             
+
                 x = { "RuleIDValue":ruleid_value, 
                       "RuleIDLength":ruleid_length,
                       "Compression":comp
@@ -103,3 +121,33 @@ class Parser:
         y = json.dumps(x)
 
         return y
+
+    def genrate_schc_msg(self, packet, device_id = None, hint = {"RuleIDValue": 101}):
+
+        t_dir = T_DIR_UP
+        parser = Parser(self)
+        comp = Compressor(self)
+
+        # We parse the packet
+        parsed_packet, residue, parsing_error = parser.parse(packet, t_dir, layers=["IPv6", "UDP"])
+
+        # We search for a rule that matches the packet:
+
+        rule, device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
+        ruleid_value = rule[T_RULEID]
+
+        if ruleid_value == hint["RuleIDValue"]:
+            if T_COMP in rule:
+                # Apply compression rule
+                schc_packet = comp.compress(rule, parsed_packet, residue, t_dir)
+                vec = binascii.hexlify(packet).decode('ascii')
+                chk_sum = vec[92:96]
+                udp_len = vec[88:92]
+                json = self.parse_schc_msg(schc_packet._content, device_id, chk_sum = chk_sum, udp_len = udp_len)
+            if T_FRAG in rule:
+                # To be done
+                return None, None
+        else:
+            print("Rule not present or bad packet")
+            return None, None
+        return json, binascii.hexlify(schc_packet._content)

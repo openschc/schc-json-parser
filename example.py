@@ -1,18 +1,50 @@
-from SCHCPParserTool.parser import Parser
+from SCHCPParserTool.parser import SCHCParser
+from scapy.all import *
+import binascii
 
-device_id = "udp:54.37.158.10:8888"
+# Exaple with LoRaWAN -- IPv6/UDP 
 
-all0_noack_a = b'\x01\xa0,@\x00\x00\x00\x1b\x03\xa0\xe0\x00\x00\x00\x00\x02\x02"Bb\x82\xa2\xc2\xe3\x03' # NoAck All-0
-all0_noack_b = b'\x01\xa0#Cc\x83\xa3\xc3\xe4\x04$Dd\x84\xa4\xc4\xe5\x05%Ee\x85\xa5\xc5\xe6' # NoAck All-0
-all1_noack = b'\x01\xa7\x9c\xe5E\x11\x06' # NoAck All-1
+# First we create an object called parser with the rules we will test (lorawan.json)
 
-schc_compressed = b'\xc4\x00\x28\x3a\x00\x60\x44\x40\x00\x00\x00\x00\x00\x00\x02\x76\x60\x2c\x00\x00\x20\x00\x20\x40\x60\x80\xa0\xc0\xe1\x01\x20'
-all0_AoE = b'\x01\x80\r\x88\x00Pt\x00\xc0\x88\x80\x00\x00\x00\x00\x00\x00\x04\xec\xc0W\x00\x00F\xa0$\x18\x80\x00\x00\x00./\xc3\x00\x00\x00\x00\x00\x04\x04D\x84\xc5\x05E\x85\xc6\x06F\x86\xc7\x07G\x87\xc8\x08H\x88\xc9\tI\x89\xca\nJ\x8a\xcb\x0bK\x8b\xcc\x0cL\x8c'
-sender_abort_AoE = b'\x01\x87\xfe'
+parser = SCHCParser()
+parser.rule_file = "lorawan.json"
+parser.rm.Add(file=parser.rule_file)
+#parser.rm.Print() # To Check the Rule
 
-#schc_bbuf, schc_pkt = getbits(AoE)
 
-parser = Parser()
-parser.rule_file = "icmp3.json"
-JSON_File = Parser.parse_schc_msg(parser, schc_pkt = all0_noack_a, device_id = device_id)
-print(JSON_File)
+# Now, we will create a IPV6/UDP packet according to the lorawan.json rule 101 [x65] using scapy
+
+device_id = "lorawan:1122334455667788",
+AppSKey = '00AABBCCDDEEFF00AABBCCDDEEFFAABB'
+DevEUI = '1122334455667788'
+IID  = SCHCParser.getdeviid(parser, AppSKey=AppSKey, DevEUI=DevEUI)
+
+ipv6 = IPv6()
+ipv6.src = "fe80::" + str(IID)[0:4] + ":" + str(IID)[4:8] + ":" + str(IID)[8:12] + ":" +str(IID)[12:16]
+ipv6.dst = "fe80::1"
+ipv6.tc = 0
+ipv6.fl = 0
+ipv6.nh = 17
+ipv6.hl = 1
+
+udp = UDP()
+udp.sport = 23628
+udp.dport = 8304
+
+udp_data = bytes.fromhex('0'*50)
+ipv6_udp = ipv6/udp/udp_data
+
+uncompressed = bytes(ipv6_udp)
+
+# Let's compress this packet using the rule 101 (this rule should be included inside the lorawan.json file) 
+
+JSON_Hint = {"RuleIDValue": 101}
+
+json, schc_pkt = SCHCParser.genrate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint, device_id=device_id)
+
+# We can now print the schc packet in hexa:
+print(schc_pkt)
+
+# Or we can also print the schc packet in JSON Format:
+print(json)
+

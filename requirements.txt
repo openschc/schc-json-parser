@@ -1,1 +1,4 @@
 scapy==2.4.5
+pycrypto==2.6.1
+pycryptodome==3.14.1
+pycryptodomex==3.11.0

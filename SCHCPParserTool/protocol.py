@@ -71,7 +71,7 @@ class SessionManager:
 
     def delete_session(self, session_id):
         self.session_table.pop(session_id)
-        print("SessionManager: deleted", session_id)
+        dprint("SessionManager: deleted", session_id)
 
     def create_reassembly_session(self, context, rule, session_id): #TODO
         session_id = self._filter_session_id(session_id)  
@@ -92,8 +92,8 @@ class SessionManager:
             raise ValueError("FRMode:", mode)
         self._add_session(session_id, session)
         setattr(session, "_session_id", session_id)
-        print("protocol.py, create_reassembly_session, session :", session_id)
-        print("protocol.py : create_reassembly_session, core_id, device_id", core_id, device_id)
+        dprint("protocol.py, create_reassembly_session, session :", session_id)
+        dprint("protocol.py : create_reassembly_session, core_id, device_id", core_id, device_id)
         return session
 
     def create_fragmentation_session(self, core_id, device_id, context, rule):

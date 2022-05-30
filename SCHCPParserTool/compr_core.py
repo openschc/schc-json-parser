@@ -502,17 +502,16 @@ class Compressor:
         assert rule[T_MO] == T_MO_MSB
         size = field[1] - rule[T_MO_VAL]
         full_value = field[0]
-        dprint("size =", size)
 
         if rule[T_FL] == "var":
             assert (size%8 == 0) #var implies bytes
-
             output.add_length(size//8)
 
         if type(full_value) == int:
             for i in range(size):
-                output.set_bit(full_value & 0x01)
-                full_value >>= 1
+                msk = (0x01 << (size - i - 1))
+                output.set_bit(full_value & msk)               
+
         elif type(full_value) == str:
             dprint(rule[T_TV], field[0])
             for i in range(rule[T_MO_VAL]//8, field[1]//8):
@@ -574,7 +573,7 @@ class Compressor:
             #output_bbuf.display(format="bin")
 
         for r in rule["Compression"]:
-            dprint("rule item:", r)
+            #dprint("rule item:", r)
 
             if r[T_DI] in [T_DIR_BI, direction]:
                 if (r[T_FID], r[T_FP]) in parsed_packet:
@@ -715,9 +714,10 @@ class Decompressor:
         val = in_bbuf.get_bits(size)
 
         dprint("====>", rule[T_TV][val], len(rule[T_TV][val]), rule[T_FL])
+ 
 
         if rule[T_FL] == "var":
-            size = len(rule[T_TV][val])
+            size = len(rule[T_TV][val]) * 8
         else:
             size = rule[T_FL]
 
@@ -738,13 +738,28 @@ class Decompressor:
         if rule[T_FL] == "var":
             send_length = in_bbuf.get_length()
             total_size = rule[T_MO_VAL] + send_length
-        elif type(rule[T_TV]) == int:
+        elif type(rule[T_FL]) == int:
             total_size = rule[T_FL]
             send_length = rule[T_FL] - rule[T_MO_VAL]
+        else:
+            raise ValueError("LSB cannot compute length")
+
+        dprint ("total size", total_size, "send size", send_length)
+
+        if type(rule[T_TV]) == int:
+            val1 = rule[T_TV]
+            val2 = in_bbuf.get_bits(send_length)
+            val = val1 | val2
+            dprint (hex(val1), hex(val2), hex(val))
+            return [val, total_size]
+
+        else:
+            raise ValueError("LSB String not implemented")
 
         tmp_bbuf.add_value(rule[T_TV], rule[T_MO_VAL])
         val = in_bbuf.get_bits(send_length)
         tmp_bbuf.add_value(val, send_length)
+        print ("LSB:", in_bbuf, tmp_bbuf)
 
         return [bytes(tmp_bbuf.get_content()), total_size]
 
@@ -835,10 +850,10 @@ class Decompressor:
         assert (rule_send == rule["RuleID"])
 
         for r in rule["Compression"]:
-            #dprint(r)
+            dprint(r)
             if r[T_DI] in [T_DIR_BI, direction]:
                 full_field = self.__func_rx_cda[r[T_CDA]](r, schc)
-                #dprint("<<<", full_field)
+                dprint("<<<", full_field)
                 self.parsed_packet[(r[T_FID], r[T_FP])] = full_field
                 #pprint.pprint (self.parsed_packet)
 
