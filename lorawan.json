@@ -16,7 +16,7 @@
                                          "Bbbb::/64"],
                                    "MO": "match-mapping",
                                    "CDA": "mapping-sent","SB": 2},
-		{"FID": "IPV6.DEV_IID", "MO": "ignore","CDA": "compute-deviid"},
+		{"FID": "IPV6.DEV_IID", "MO": "ignore","CDA": "not-sent"},
 		{"FID": "IPV6.APP_IID", "TV": "::1", "MO": "equal","CDA": "not-sent"},
         {"FID": "IPV6.APP_PREFIX","TV": ["Aaaa::/64",
                                          "Bbbb::/64",

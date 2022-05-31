@@ -134,6 +134,10 @@ class SCHCParser:
         # We search for a rule that matches the packet:
 
         rule, device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
+        if rule == None:
+            print("Rule does not match packet")
+            return None, None
+
         ruleid_value = rule[T_RULEID]
 
         if ruleid_value == hint["RuleIDValue"]:
@@ -148,6 +152,6 @@ class SCHCParser:
                 # To be done
                 return None, None
         else:
-            print("Rule not present or bad packet")
+            print("Rule in packet does not match hint")
             return None, None
         return json, binascii.hexlify(schc_packet._content)

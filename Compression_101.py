@@ -38,7 +38,7 @@ uncompressed = bytes(ipv6_udp)
 
 # Let's compress this packet using the rule 101 (this rule should be included inside the lorawan.json file) 
 
-JSON_Hint = {"RuleIDValue": 100}
+JSON_Hint = {"RuleIDValue": 101}
 
 json, schc_pkt = SCHCParser.genrate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint, device_id=device_id)
 

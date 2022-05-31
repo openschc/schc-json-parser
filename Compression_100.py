@@ -25,17 +25,18 @@ ipv6.dst = "fe80::1"
 ipv6.tc = 0
 ipv6.fl = 0
 ipv6.nh = 17
-ipv6.hl = 1
+ipv6.hl = 40
 
 udp = UDP()
 udp.sport = 23628
-udp.dport = 8304
+udp.dport = 4228
 
 udp_data = bytes.fromhex('0'*50)
 ipv6_udp = ipv6/udp/udp_data
 
 uncompressed = bytes(ipv6_udp)
 
+print(binascii.hexlify(uncompressed))
 # Let's compress this packet using the rule 101 (this rule should be included inside the lorawan.json file) 
 
 JSON_Hint = {"RuleIDValue": 100}
