@@ -13,7 +13,7 @@ import binascii
 class SCHCParser:
 
     def __init__(self):
-        self.rule_file = "icmp3.json"
+        self.rule_file = "lorawan.json"
         self.rm = RM.RuleManager()
 
     def getdeviid (self, AppSKey, DevEUI):
@@ -32,9 +32,14 @@ class SCHCParser:
 
         schc_bbuf = BitBuffer(schc_pkt)
         rule = self.rm.FindRuleFromSCHCpacket(schc=schc_bbuf, device=device_id)
+
+        if rule == None:
+            print("rule not found")
+            return None
+
         ruleid_value = rule[T_RULEID]
         ruleid_length = rule[T_RULEIDLENGTH]
-        #print(rule)
+
         if T_FRAG in rule:
             schc_frag = FM.frag_receiver_rx(rule, schc_bbuf)
             mode = rule[T_FRAG][T_FRAG_MODE]

@@ -28,13 +28,17 @@ class ConnectivityManager:
     """
 
     def __init__(self):
+        self.mtu = 50
         pass
 
     def get_mtu (self, device):
         """
         Return the MTU is bits for a specific device, currently returns always 500
         """
-        return 600
+        return self.mtu
+    
+    def set_mtu(self, mtu):
+        self.mtu = mtu
 
 
 # ---------------------------------------------------------------------------
@@ -275,8 +279,7 @@ class SCHCProtocol:
         TODO: If only compress retun True
         If Compres and Frag, return context
         """
-        self._log("schc_send {} {}".format(core_id, device_id))
-	#, raw_packet))
+        self._log("schc_send {} {}".format(core_id, device_id)) #, raw_packet))
 
         #To perform fragmentation, we get the device_id from the rule:
         #Ex: "DeviceID" : "udp:54.37.158.10:8888",

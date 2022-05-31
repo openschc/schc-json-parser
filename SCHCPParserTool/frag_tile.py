@@ -7,7 +7,7 @@
 from SCHCPParserTool.gen_base_import import *
 from SCHCPParserTool.gen_utils import dprint
 
-import SCHCPParserTool.frag_msg
+from SCHCPParserTool import frag_msg
 from SCHCPParserTool.compr_core import *
 
 #---------------------------------------------------------------------------
@@ -58,6 +58,7 @@ class TileList():
                     "tile": t,
                     "sent": False,
                 }
+            print(tile_obj)
             self.all_tiles.append(tile_obj)
             if t_num == 0:
                 t_num = self.max_fcn
@@ -69,7 +70,7 @@ class TileList():
             raise ValueError(
                     "ERROR: the packet size > WSize. {} > {}".format(
                             w_num, frag_msg.get_win_all_1(rule)))
-        self.max_w_num = w_num
+        #self.max_w_num = w_num
         #dprint("DEBUG: all_tiles:")
         #for i in self.all_tiles:
         #    dprint("DEBUG:  ", i)

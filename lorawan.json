@@ -59,7 +59,43 @@
         {"FID": "UDP.LEN",       "TV": 0,   "MO": "ignore","CDA": "compute-length"},
         {"FID": "UDP.CKSUM",     "TV": 0,  "MO": "ignore","CDA": "compute-checksum"}
 		
-	    ]
-	 }
+    ]
+    },{
+       "RuleID" : 20,
+       "RuleIDLength" : 8,
+       "Fragmentation" : {
+           "FRMode": "AckOnError",
+           "FRDirection": "UP",
+           "FRModeProfile": {
+               "dtagSize": 0,
+               "WSize": 2,
+               "FCNSize": 6,
+               "ackBehavior": "afterAll1",
+               "tileSize": 10,
+               "MICAlgorithm": "crc32",
+               "MICWordSize": 8,
+               "L2WordSize": 8,
+               "lastTileInAll1": false
+           }
+    }
+    },{	
+       "RuleID" : 30,
+       "RuleIDLength" : 8,
+       "Fragmentation" : {
+       "FRMode": "AckAlways",
+       "FRDirection": "DW",
+       "FRModeProfile": {
+           "dtagSize": 0,
+           "WSize": 2,
+           "FCNSize": 6,
+           "ackBehavior": "afterAll1",
+           "tileSize": 10,
+           "MICAlgorithm": "crc32",
+           "MICWordSize": 8,
+           "L2WordSize": 8,
+           "lastTileInAll1": false
+       }
+       } 
+   }
 ]
 }

@@ -12,7 +12,7 @@ parser.rm.Add(file=parser.rule_file)
 #parser.rm.Print() # To Check the Rule
 
 
-# Now, we will create a IPV6/UDP packet according to the lorawan.json rule 101 [x65] using scapy
+# Now, we will create a IPV6/UDP packet according to the lorawan.json rule 100 [x64] using scapy
 
 device_id = "lorawan:1122334455667788",
 AppSKey = '00AABBCCDDEEFF00AABBCCDDEEFFAABB'

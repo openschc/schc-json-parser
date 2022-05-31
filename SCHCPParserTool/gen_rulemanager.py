@@ -547,7 +547,7 @@ class RuleManager:
                     _default_value (arule, nrule, T_FRAG_W, 0)
                     _default_value (arule, nrule, T_FRAG_FCN, 3)
                     _default_value(arule, nrule, T_FRAG_L2WORDSIZE, 8)
-                elif nrule[T_FRAG][T_FRAG_MODE] == "aT_FRAG_ACK_ALWAYS":
+                elif nrule[T_FRAG][T_FRAG_MODE] == "T_FRAG_ACK_ALWAYS":
                     _default_value (arule, nrule, T_FRAG_W, 1)
                     _default_value(arule, nrule, T_FRAG_L2WORDSIZE, 8)
                 elif  nrule[T_FRAG][T_FRAG_MODE] == "AckOnError":
@@ -1103,6 +1103,7 @@ class RuleManager:
         """ returns the rule corresponding to the id stored at the
         beginning of the SCHC packet.
         """
+        dprint(device)
         for d in self._ctxt:
             dprint (d["DeviceID"])
             if d["DeviceID"] == device: #look for a specific device

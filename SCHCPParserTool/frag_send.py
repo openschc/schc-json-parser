@@ -17,6 +17,7 @@ import time
 from SCHCPParserTool.compr_core import *
 #---------------------------------------------------------------------------
 
+enable_statsct = False
 max_ack_requests = 8
 
 class FragmentBase():
@@ -477,10 +478,10 @@ class FragmentAckOnError(FragmentBase):
                 else:
                     mic = self.mic_sent
                 dprint("mic_sent -> {}".format(self.mic_sent))
-                if enable_statsct:
-                    Statsct.set_msg_type("SCHC_ALL_1")
-                    Statsct.set_header_size(frag_msg.get_sender_header_size(self.rule) +
-                                            frag_msg.get_mic_size(self.rule))
+                #if enable_statsct:
+                #    Statsct.set_msg_type("SCHC_ALL_1")
+                #    Statsct.set_header_size(frag_msg.get_sender_header_size(self.rule) +
+                #                            frag_msg.get_mic_size(self.rule))
                 self.all1_send = True
                 self.state = self.SEND_ALL_1
             else:
