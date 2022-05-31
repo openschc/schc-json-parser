@@ -4,8 +4,8 @@ from SCHCPParserTool.gen_bitarray import BitBuffer
 from SCHCPParserTool import gen_rulemanager as RM
 from SCHCPParserTool import frag_msg as FM
 
-from Crypto.Hash import CMAC
-from Crypto.Cipher import AES
+from Cryptodome.Hash import CMAC
+from Cryptodome.Cipher import AES
 
 import json
 import binascii
