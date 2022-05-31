@@ -10,7 +10,7 @@ All_01 =  b'\x14(\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 All_0 = int = b'\x14\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 All_1 = b'\x14?\xa9\x8cX('
 
-device_id = "lorawan:1122334455667788" #This should be the same as in the lorawan.json
+device_id = "lorawan:1122334455667788" #This should be the same as in the lorawan.json file
 
 # We call the function to parse the fragments:
 

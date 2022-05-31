@@ -20,7 +20,7 @@ pip3 install git+https://github.com/openschc/schc-json-parser.git
 
 # IPv6/UDP compression lorawan Rules:
 
-```lorawan.json``` ---> 101 and 100
+```lorawan.json``` ---> 101, 100 (Compression), 20 (Frag UP), 21 (Frag DW)
 
 # ICMP Rules:
 
