@@ -25,6 +25,7 @@ class SCHCParser:
     def changeDevEUI (self, DevEUI = None):
         self.deveui = DevEUI
         self.device_id = "lorawan:" + DevEUI
+        self.rm.change_device_id(self.device_id)
 
     def changeAppSKey (self, AppSKey = None):
         self.appskey = AppSKey

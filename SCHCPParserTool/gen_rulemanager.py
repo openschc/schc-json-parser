@@ -398,6 +398,11 @@ class RuleManager:
         else:
             return val
 
+    def change_device_id(self, new_dev_id):
+        self._ctxt[0]["DeviceID"] = new_dev_id
+        print(self._ctxt[0]["DeviceID"])
+
+
     def Add(self, device=None, dev_info=None, file=None, compression=True):
         """
         Add is used to add a new rule or a set of rules to a context. Add checks the validity of the rule:
