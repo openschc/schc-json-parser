@@ -1116,6 +1116,22 @@ class RuleManager:
                         return r
         return None
 
+    def FindRuleFromRuleID (self, device=None, ruleID=None):
+        """ returns the rule corresponding to the id stored at the
+        beginning of the SCHC packet.
+        """
+        dprint(device)
+        for d in self._ctxt:
+            dprint (d["DeviceID"])
+            if d["DeviceID"] == device: #look for a specific device
+                for r in d["SoR"]:
+                    tested_rule = r[T_RULEID]
+                    ruleLength = r[T_RULEIDLENGTH]
+                    dprint (tested_rule, ruleID)
+                    if tested_rule == ruleID:
+                        return r
+        return None
+
 
     def FindRuleFromPacket(self, pkt, direction=T_DIR_BI, failed_field=False):
         """ Takes a parsed packet and returns the matching rule.

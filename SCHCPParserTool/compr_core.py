@@ -843,6 +843,7 @@ class Decompressor:
     def decompress(self, schc, rule, direction):
         assert ("Compression" in rule)
         schc.set_read_position(0)
+        print(schc)
 
         self.parsed_packet = {}
 
@@ -855,7 +856,7 @@ class Decompressor:
                 full_field = self.__func_rx_cda[r[T_CDA]](r, schc)
                 dprint("<<<", full_field)
                 self.parsed_packet[(r[T_FID], r[T_FP])] = full_field
-                #pprint.pprint (self.parsed_packet)
+                dprint (self.parsed_packet)
 
         return self.parsed_packet
 

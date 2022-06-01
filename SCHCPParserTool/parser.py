@@ -4,34 +4,86 @@ from SCHCPParserTool.gen_bitarray import BitBuffer
 from SCHCPParserTool import gen_rulemanager as RM
 from SCHCPParserTool import frag_msg as FM
 
-from Cryptodome.Hash import CMAC
+from Cryptodome.Hash import CMAC as cmac
 from Cryptodome.Cipher import AES
 
 import json
 import binascii
+from scapy.all import *
 
 class SCHCParser:
 
     def __init__(self):
-        self.rule_file = "lorawan.json"
+        self.rule_file = "SCHCPParserTool/lorawan.json"
+        self.device_id = "lorawan:1122334455667788"
+        self.deveui = "1122334455667788"
+        self.appskey = "00AABBCCDDEEFF00AABBCCDDEEFFAABB"
         self.rm = RM.RuleManager()
+        self.rm.Add(file=self.rule_file)
 
-    def getdeviid (self, AppSKey, DevEUI):
-        cobj = CMAC.new(bytes.fromhex(AppSKey), ciphermod=AES)
+    def changeDevEUI (self, DevEUI = None):
+        self.deveui = DevEUI
+        self.device_id = "lorawan:" + DevEUI
+
+    def changeAppSKey (self, AppSKey = None):
+        self.appskey = AppSKey
+        
+    def getdeviid (AppSKey, DevEUI):
+        cobj = cmac.new(bytes.fromhex(AppSKey), ciphermod=AES)
         cobj.update(bytes.fromhex(DevEUI))
         res = cobj.hexdigest()
-        IID = res[0:16]
-        return IID
+        iid = res[0:16]
+        return iid
 
+    def generateIPv6UDP(self, comp_ruleID, DevEUI, AppSKey, dev_prefix, ipv6_dst, udp_data):
+
+        DevEUI = self.deveui
+        AppSKey = self.appskey
+
+        rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=comp_ruleID)
+
+        #print(rule[T_COMP])
+        for e in rule[T_COMP]:
+            if e[T_FID] == 'IPV6.TC':
+                tc = e[T_TV]
+            if e[T_FID] == 'IPV6.FL':
+                fl = e[T_TV]
+            if e[T_FID] == 'IPV6.NXT':
+                nh = e[T_TV]
+            if e[T_FID] == 'IPV6.HOP_LMT':
+                hl = e[T_TV]
+            if e[T_FID] == 'UDP.DEV_PORT':
+                sport = e[T_TV]
+            if e[T_FID] == 'UDP.APP_PORT':
+                dport = e[T_TV]
+
+
+        iid  = SCHCParser.getdeviid(AppSKey=AppSKey, DevEUI=DevEUI)
+
+        ipv6 = IPv6()
+        ipv6.src = dev_prefix + str(iid)[0:4] + ":" + str(iid)[4:8] + ":" + str(iid)[8:12] + ":" +str(iid)[12:16]
+        ipv6.dst = ipv6_dst
+        ipv6.tc = tc
+        ipv6.fl = fl
+        ipv6.nh = nh
+        ipv6.hl = hl
+
+        udp = UDP()
+        udp.sport = sport
+        udp.dport = dport
         
-    def parse_schc_msg(self, schc_pkt, device_id, appskey=None, ruleID=None, chk_sum = None, udp_len = None):
+        ipv6_udp = ipv6/udp/udp_data
+
+        return bytes(ipv6_udp)
+
+    def parse_schc_msg(self, schc_pkt, appskey=None, ruleID=None, chk_sum = None, udp_len = None):
 
         #if ruleID then add 8 bits at first before BitBuffer
         if ruleID is not None:
             schc_pkt = ruleID + schc_pkt
 
         schc_bbuf = BitBuffer(schc_pkt)
-        rule = self.rm.FindRuleFromSCHCpacket(schc=schc_bbuf, device=device_id)
+        rule = self.rm.FindRuleFromSCHCpacket(schc=schc_bbuf, device=self.device_id)
 
         if rule == None:
             print("rule not found")
@@ -99,6 +151,14 @@ class SCHCParser:
         else:
                 decomp = Decompressor()
                 parsed_pkt = decomp.decompress(schc=schc_bbuf, rule=rule, direction=T_DIR_UP)
+                residue = schc_bbuf.get_bits_as_buffer(nb_bits=schc_bbuf._rpos-8, position=8)
+                resi_len = residue._wpos
+
+                residue_hex=binascii.hexlify(residue._content).decode('ascii')
+                length = len(residue_hex)*4
+                residue = f'{int(residue_hex, base=16):0>{length}b}'[0:resi_len]
+
+                dprint(residue, resi_len) 
                 keys = list(parsed_pkt.keys())
                 values = list(parsed_pkt.values())
 
@@ -107,6 +167,9 @@ class SCHCParser:
                         values[i][0] =  binascii.hexlify(value[0]).decode('ascii')
 
                 comp = {}
+                comp.update({"Residue": residue})
+                comp.update({"ResidueLength": resi_len})
+
                 for i, key in enumerate(keys):
                     try:
                         if YANG_ID[key[0]][1] == "fid-udp-length":
@@ -127,7 +190,7 @@ class SCHCParser:
 
         return y
 
-    def genrate_schc_msg(self, packet, device_id = None, hint = {"RuleIDValue": 101}):
+    def genrate_schc_msg(self, packet, hint = {"RuleIDValue": 101}):
 
         t_dir = T_DIR_UP
         parser = Parser(self)
@@ -138,7 +201,7 @@ class SCHCParser:
 
         # We search for a rule that matches the packet:
 
-        rule, device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
+        rule, self.device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
         if rule == None:
             print("Rule does not match packet")
             return None, None
@@ -152,7 +215,7 @@ class SCHCParser:
                 vec = binascii.hexlify(packet).decode('ascii')
                 chk_sum = vec[92:96]
                 udp_len = vec[88:92]
-                json = self.parse_schc_msg(schc_packet._content, device_id, chk_sum = chk_sum, udp_len = udp_len)
+                json = self.parse_schc_msg(schc_packet._content, chk_sum = chk_sum, udp_len = udp_len)
             if T_FRAG in rule:
                 # To be done
                 return None, None

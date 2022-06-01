@@ -1,5 +1,4 @@
 from SCHCPParserTool.parser import SCHCParser
-from scapy.all import *
 import binascii
 
 # Exaple with LoRaWAN -- IPv6/UDP 
@@ -7,41 +6,33 @@ import binascii
 # First we create an object called parser with the rules we will test (lorawan.json)
 
 parser = SCHCParser()
-parser.rule_file = "lorawan.json"
-parser.rm.Add(file=parser.rule_file)
+#parser.rule_file = "lorawan.json"
+#parser.rm.Add(file=parser.rule_file)
 #parser.rm.Print() # To Check the Rule
 
+# We add a DevEUI and AppSKey to the parser object:
+DevEUI = '1122334455667788'
+AppSKey = '00AABBCCDDEEFF00AABBCCDDEEFFAABB'
+
+parser.changeDevEUI (DevEUI=DevEUI)
+parser.changeAppSKey (AppSKey=AppSKey)
 
 # Now, we will create a IPV6/UDP packet according to the lorawan.json rule 100 [x64] using scapy
 
-device_id = "lorawan:1122334455667788",
-AppSKey = '00AABBCCDDEEFF00AABBCCDDEEFFAABB'
-DevEUI = '1122334455667788'
-IID  = SCHCParser.getdeviid(parser, AppSKey=AppSKey, DevEUI=DevEUI)
-
-ipv6 = IPv6()
-ipv6.src = "fe80::" + str(IID)[0:4] + ":" + str(IID)[4:8] + ":" + str(IID)[8:12] + ":" +str(IID)[12:16]
-ipv6.dst = "fe80::1"
-ipv6.tc = 0
-ipv6.fl = 0
-ipv6.nh = 17
-ipv6.hl = 40
-
-udp = UDP()
-udp.sport = 23628
-udp.dport = 4228
-
+comp_ruleID = 100
+dev_prefix = "fe80::" 
+ipv6_dst = "fe80::1"
 udp_data = bytes.fromhex('0'*50)
-ipv6_udp = ipv6/udp/udp_data
 
-uncompressed = bytes(ipv6_udp)
+uncompressed = SCHCParser.generateIPv6UDP(parser, comp_ruleID, DevEUI, AppSKey, dev_prefix, ipv6_dst, udp_data)
 
-print(binascii.hexlify(uncompressed))
-# Let's compress this packet using the rule 101 (this rule should be included inside the lorawan.json file) 
 
-JSON_Hint = {"RuleIDValue": 100}
+print(binascii.hexlify(uncompressed).decode('ascii'))
 
-json, schc_pkt = SCHCParser.genrate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint, device_id=device_id)
+
+# Let's compress this packet using the rule 101
+JSON_Hint = {"RuleIDValue": comp_ruleID}
+json, schc_pkt = SCHCParser.genrate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
 
 # We can now print the schc packet in hexa:
 print(schc_pkt)
@@ -49,3 +40,6 @@ print(schc_pkt)
 # Or we can also print the schc packet in JSON Format:
 print(json)
 
+#pkt = b'\x64\x3c\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#y = SCHCParser.parse_schc_msg(parser, schc_pkt = pkt)
+#print(y)
