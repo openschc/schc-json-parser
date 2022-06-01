@@ -22,7 +22,7 @@ parser.changeAppSKey (AppSKey=AppSKey)
 comp_ruleID = 101
 dev_prefix = "fe80::" 
 ipv6_dst = "fe80::1"
-udp_data = bytes.fromhex('0'*100) # We create a 50 bytes of zeros
+udp_data = bytes.fromhex('00'*50) # We create a 50 bytes of zeros
 
 uncompressed = SCHCParser.generateIPv6UDP(parser, comp_ruleID, DevEUI, AppSKey, dev_prefix, ipv6_dst, udp_data)
 print(binascii.hexlify(uncompressed).decode('ascii'))

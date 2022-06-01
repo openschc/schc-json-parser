@@ -35,6 +35,8 @@ class SCHCParser:
         cobj.update(bytes.fromhex(DevEUI))
         res = cobj.hexdigest()
         iid = res[0:16]
+
+        dprint(iid)
         return iid
 
     def generateIPv6UDP(self, comp_ruleID, DevEUI, AppSKey, dev_prefix, ipv6_dst, udp_data):
@@ -73,6 +75,8 @@ class SCHCParser:
         udp = UDP()
         udp.sport = sport
         udp.dport = dport
+
+        dprint ("dev_prefix", dev_prefix, " ipv6_dst ", ipv6_dst, " tc ", tc, " fl ", fl, " nh ", nh, " hl ", hl, sport, dport )
         
         ipv6_udp = ipv6/udp/udp_data
 

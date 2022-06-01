@@ -400,7 +400,7 @@ class RuleManager:
 
     def change_device_id(self, new_dev_id):
         self._ctxt[0]["DeviceID"] = new_dev_id
-        print(self._ctxt[0]["DeviceID"])
+        #print(self._ctxt[0]["DeviceID"])
 
 
     def Add(self, device=None, dev_info=None, file=None, compression=True):
