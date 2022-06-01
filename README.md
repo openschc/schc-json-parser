@@ -8,7 +8,7 @@ pip3 install git+https://github.com/openschc/schc-json-parser.git
 
 # An example to compress IPv6/UDP Packets into bytearray and JSON Format
 
-```example.py```
+```Compression_101.py```
 
 # An example to parse IPv6/ICMP SCHC Fragments into JSON
 
@@ -16,7 +16,7 @@ pip3 install git+https://github.com/openschc/schc-json-parser.git
 
 # An example to parse IPv6/UDP SCHC Fragments into JSON
 
-```Fragmentation_parse.py```
+```Parser_example.py```
 
 # IPv6/UDP compression lorawan Rules:
 
