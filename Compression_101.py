@@ -19,14 +19,12 @@ parser.changeAppSKey (AppSKey=AppSKey)
 
 # Now, we will create a IPV6/UDP packet according to the lorawan.json rule 100 [x64] using scapy
 
-comp_ruleID = 100
+comp_ruleID = 101
 dev_prefix = "fe80::" 
 ipv6_dst = "fe80::1"
-udp_data = bytes.fromhex('0'*50)
+udp_data = bytes.fromhex('0'*100) # We create a 50 bytes of zeros
 
 uncompressed = SCHCParser.generateIPv6UDP(parser, comp_ruleID, DevEUI, AppSKey, dev_prefix, ipv6_dst, udp_data)
-
-
 print(binascii.hexlify(uncompressed).decode('ascii'))
 
 
@@ -40,6 +38,3 @@ print(schc_pkt)
 # Or we can also print the schc packet in JSON Format:
 print(json)
 
-#pkt = b'\x64\x3c\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#y = SCHCParser.parse_schc_msg(parser, schc_pkt = pkt)
-#print(y)

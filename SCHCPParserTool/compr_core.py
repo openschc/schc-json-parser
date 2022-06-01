@@ -843,7 +843,7 @@ class Decompressor:
     def decompress(self, schc, rule, direction):
         assert ("Compression" in rule)
         schc.set_read_position(0)
-        print(schc)
+        #print(schc)
 
         self.parsed_packet = {}
 

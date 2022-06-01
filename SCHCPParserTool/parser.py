@@ -1,3 +1,4 @@
+import SCHCPParserTool
 from SCHCPParserTool.compr_core import * 
 from SCHCPParserTool.compr_parser import * 
 from SCHCPParserTool.gen_bitarray import BitBuffer
@@ -76,6 +77,10 @@ class SCHCParser:
 
         return bytes(ipv6_udp)
 
+    def bytes_needed(value):
+        b = math.ceil(value/8) 
+        return b
+
     def parse_schc_msg(self, schc_pkt, appskey=None, ruleID=None, chk_sum = None, udp_len = None):
 
         #if ruleID then add 8 bits at first before BitBuffer
@@ -145,11 +150,12 @@ class SCHCParser:
                     "abort":abort,
                     "ack":ack,
                     "ack_req":ack_request,
-                }        
+                }
             }
 
         else:
                 decomp = Decompressor()
+
                 parsed_pkt = decomp.decompress(schc=schc_bbuf, rule=rule, direction=T_DIR_UP)
                 residue = schc_bbuf.get_bits_as_buffer(nb_bits=schc_bbuf._rpos-8, position=8)
                 resi_len = residue._wpos
@@ -159,6 +165,10 @@ class SCHCParser:
                 residue = f'{int(residue_hex, base=16):0>{length}b}'[0:resi_len]
 
                 dprint(residue, resi_len) 
+                schc_len = SCHCParser.bytes_needed(resi_len) + 1 # Rule is on 1 byte
+                data = binascii.hexlify(schc_pkt[schc_len:]).decode('ascii')
+                data_len = len(schc_pkt[schc_len:])
+
                 keys = list(parsed_pkt.keys())
                 values = list(parsed_pkt.values())
 
@@ -169,6 +179,9 @@ class SCHCParser:
                 comp = {}
                 comp.update({"Residue": residue})
                 comp.update({"ResidueLength": resi_len})
+
+                comp.update({"Data": data})
+                comp.update({"DataLength": data_len})
 
                 for i, key in enumerate(keys):
                     try:
@@ -222,4 +235,5 @@ class SCHCParser:
         else:
             print("Rule in packet does not match hint")
             return None, None
+        dprint (schc_packet._content)
         return json, binascii.hexlify(schc_packet._content)
