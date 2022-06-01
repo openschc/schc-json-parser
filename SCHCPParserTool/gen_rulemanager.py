@@ -552,9 +552,11 @@ class RuleManager:
                     _default_value (arule, nrule, T_FRAG_W, 0)
                     _default_value (arule, nrule, T_FRAG_FCN, 3)
                     _default_value(arule, nrule, T_FRAG_L2WORDSIZE, 8)
-                elif nrule[T_FRAG][T_FRAG_MODE] == "T_FRAG_ACK_ALWAYS":
+                elif nrule[T_FRAG][T_FRAG_MODE] == T_FRAG_ACK_ALWAYS:
                     _default_value (arule, nrule, T_FRAG_W, 1)
                     _default_value(arule, nrule, T_FRAG_L2WORDSIZE, 8)
+                    _default_value (arule, nrule, T_FRAG_MAX_RETRY, 4) # verif
+                    _default_value (arule, nrule, T_FRAG_TIMEOUT, 600) # verif
                 elif  nrule[T_FRAG][T_FRAG_MODE] == "AckOnError":
                     if not T_FRAG_FCN in nrule[T_FRAG][T_FRAG_PROF]:
                         raise ValueError ("FCN Must be specified for Ack On Error")
