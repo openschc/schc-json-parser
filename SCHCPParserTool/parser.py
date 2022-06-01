@@ -29,6 +29,11 @@ class SCHCParser:
 
     def changeAppSKey (self, AppSKey = None):
         self.appskey = AppSKey
+
+    def change_ruleid (self, oldrule_id, new_ruleid):
+        for a in self.rm._ctxt[0]['SoR']:
+            if a['RuleID'] == oldrule_id:
+                a['RuleID'] = new_ruleid
         
     def getdeviid (AppSKey, DevEUI):
         cobj = cmac.new(bytes.fromhex(AppSKey), ciphermod=AES)
@@ -46,20 +51,23 @@ class SCHCParser:
 
         rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=comp_ruleID)
 
-        #print(rule[T_COMP])
-        for e in rule[T_COMP]:
-            if e[T_FID] == 'IPV6.TC':
-                tc = e[T_TV]
-            if e[T_FID] == 'IPV6.FL':
-                fl = e[T_TV]
-            if e[T_FID] == 'IPV6.NXT':
-                nh = e[T_TV]
-            if e[T_FID] == 'IPV6.HOP_LMT':
-                hl = e[T_TV]
-            if e[T_FID] == 'UDP.DEV_PORT':
-                sport = e[T_TV]
-            if e[T_FID] == 'UDP.APP_PORT':
-                dport = e[T_TV]
+        if rule is not None:
+            #print(rule[T_COMP])
+            for e in rule[T_COMP]:
+                if e[T_FID] == 'IPV6.TC':
+                    tc = e[T_TV]
+                if e[T_FID] == 'IPV6.FL':
+                    fl = e[T_TV]
+                if e[T_FID] == 'IPV6.NXT':
+                    nh = e[T_TV]
+                if e[T_FID] == 'IPV6.HOP_LMT':
+                    hl = e[T_TV]
+                if e[T_FID] == 'UDP.DEV_PORT':
+                    sport = e[T_TV]
+                if e[T_FID] == 'UDP.APP_PORT':
+                    dport = e[T_TV]
+        else:
+            return None
 
 
         iid  = SCHCParser.getdeviid(AppSKey=AppSKey, DevEUI=DevEUI)
