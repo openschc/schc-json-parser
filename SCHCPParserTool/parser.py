@@ -15,12 +15,23 @@ from scapy.all import *
 class SCHCParser:
 
     def __init__(self):
-        self.rule_file = "SCHCPParserTool/lorawan.json"
+        self.rule_file = self.get_file_path()
         self.device_id = "lorawan:1122334455667788"
         self.deveui = "1122334455667788"
         self.appskey = "00AABBCCDDEEFF00AABBCCDDEEFFAABB"
         self.rm = RM.RuleManager()
         self.rm.Add(file=self.rule_file)
+
+    def get_file_path(self):
+        target = "lorawan.json"
+        initial_dir = os.getcwd()
+        path = ''
+        for root, _, files in os.walk(initial_dir):
+            if target in files:
+                path = os.path.join(root, target)
+                break
+        return path
+
 
     def changeDevEUI (self, DevEUI = None):
         self.deveui = DevEUI
@@ -216,7 +227,7 @@ class SCHCParser:
 
         return y
 
-    def genrate_schc_msg(self, packet, hint = {"RuleIDValue": 101}):
+    def generate_schc_msg(self, packet, hint = {"RuleIDValue": 101}):
 
         t_dir = T_DIR_UP
         parser = Parser(self)

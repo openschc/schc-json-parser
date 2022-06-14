@@ -30,7 +30,7 @@ print(binascii.hexlify(uncompressed).decode('ascii'))
 
 # Let's compress this packet using the rule 101
 JSON_Hint = {"RuleIDValue": comp_ruleID}
-json, schc_pkt = SCHCParser.genrate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
+json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
 
 # We can now print the schc packet in hexa:
 print(schc_pkt)

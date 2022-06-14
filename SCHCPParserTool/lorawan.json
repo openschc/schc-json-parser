@@ -25,7 +25,7 @@
                                    "MO": "match-mapping",
                                    "CDA": "mapping-sent","SB": 2},
 		{"FID": "UDP.DEV_PORT", "TV": 23628, "MO": "MSB", "MO.VAL": 12, "CDA": "LSB"},
-        {"FID": "UDP.APP_PORT", "TV": 4228, "MO": "MSB", "MO.VAL": 12, "CDA": "LSB"},
+        {"FID": "UDP.APP_PORT", "TV": 4208, "MO": "MSB", "MO.VAL": 12, "CDA": "LSB"},
         {"FID": "UDP.LEN",      "TV": 0,  "MO": "ignore","CDA": "compute-length"},
         {"FID": "UDP.CKSUM",    "TV": 0,  "MO": "ignore","CDA": "compute-checksum"}
 	    ]

@@ -22,5 +22,5 @@ parser.rule_file = "icmp3.json"
 parser.rm.Add(file=parser.rule_file)
 
 #Parse the SCHC Packet
-JSON_File = SCHCParser.parse_schc_msg(parser, schc_pkt = all0_noack_a, device_id = device_id)
+JSON_File = SCHCParser.parse_schc_msg(parser, schc_pkt = all0_noack_a)
 print(JSON_File)
