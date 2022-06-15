@@ -18,6 +18,7 @@ udp_data = bytearray(50)
 
 no_compress_pkt = parser.generateIPv6UDP(ruleID, udp_data)
 
+print(no_compress_pkt)
 #no compress packets
 schc_parsed_comp = parser.parse_schc_msg(schc_pkt=no_compress_pkt, ruleID=ruleID)
 

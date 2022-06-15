@@ -57,7 +57,7 @@ class SCHCParser:
         dprint(iid)
         return iid
 
-    def generateIPv6UDP(self, comp_ruleID, dev_prefix = "fe80::" , ipv6_dst = "fe80::1", udp_data = bytearray(50)):
+    def generateIPv6UDP(self, comp_ruleID, dev_prefix = "fe80::" , ipv6_dst = "fe80::1", sport = 23616 , dport = 12400, udp_data = bytearray(50)):
 
         rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=comp_ruleID)
 
@@ -117,7 +117,7 @@ class SCHCParser:
 
         ipv6 = IPv6()
         ipv6.src = dev_prefix + str(iid)[0:4] + ":" + str(iid)[4:8] + ":" + str(iid)[8:12] + ":" +str(iid)[12:16]
-        ipv6.dst = app_prefix + app_iid
+        ipv6.dst = app_prefix + app_iid[14]
         ipv6.tc = tc
         ipv6.fl = fl
         ipv6.nh = nh
@@ -289,7 +289,7 @@ class SCHCParser:
             dport = 12400
             dev_prefix = "fe80::"
             app_prefix = "fe80::"
-            app_iid = "1"
+            app_iid = "0000000000000001"
             udp_len = 58
             check_sum = 8034
             ipv6_pay_len = 58
@@ -305,52 +305,53 @@ class SCHCParser:
                         if values[i][0] == self.iid:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "DevIID not valid"})
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})
                     if YANG_ID[key[0]][1] == "fid-udp-dev-port":
                         if values[i][0] == dport:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "UDP Dev port not valid"})
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})
                     if YANG_ID[key[0]][1] == "fid-udp-app-port":
                         if values[i][0] == sport:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "UDP App port not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-udp-length":
                         if values[i][0] == udp_len:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "UDP length not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-udp-checksum":
                         if values[i][0] == check_sum:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "UDP checksum not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-ipv6-payloadlength":
                         if values[i][0] == ipv6_pay_len:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 payload length not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-ipv6-nextheader":
                         if values[i][0] == nh:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 next header not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-ipv6-devprefix": 
                         if values[i][0] == dev_prefix:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 Dev Prefix not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-ipv6-appprefix":
                         if values[i][0] == app_prefix:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 App Prefix not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-ipv6-appiid": 
+                        print(app_iid, values[i][0])
                         if values[i][0] == app_iid:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
-                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 App IID not valid"})  
+                            nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     else:
                         nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                 except:
@@ -358,7 +359,7 @@ class SCHCParser:
 
             x = { "RuleIDValue":ruleid_value, 
                   "RuleIDLength":ruleid_length,
-                  "Compression":nocomp
+                  "NoCompression":nocomp
             }
 
         y = json.dumps(x)
