@@ -18,10 +18,6 @@ All_0 =  b'\x14\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 All_1 = b'\x14?\xa9\x8cX('
 
 compress_pkt = b'e\xe0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-
-
-device_id = "lorawan:1122334455667788" #This should be the same as in the lorawan.json file
-
 # We call the function to parse the fragments:
 
 #First All_0
@@ -35,6 +31,9 @@ print(schc_parsed_0)
 #All_1
 schc_parsed_1 = SCHCParser.parse_schc_msg(parser, schc_pkt=All_1)
 print(schc_parsed_1)
+
+#b'640c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+#b'65e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
 
 #Compress packets
 schc_parsed_comp = SCHCParser.parse_schc_msg(parser, schc_pkt=compress_pkt)

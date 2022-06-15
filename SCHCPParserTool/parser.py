@@ -21,6 +21,7 @@ class SCHCParser:
         self.appskey = "00AABBCCDDEEFF00AABBCCDDEEFFAABB"
         self.rm = RM.RuleManager()
         self.rm.Add(file=self.rule_file)
+        self.iid  = SCHCParser.getdeviid(AppSKey=self.appskey, DevEUI=self.deveui)
 
     def get_file_path(self):
         target = "lorawan.json"
@@ -32,14 +33,15 @@ class SCHCParser:
                 break
         return path
 
-
     def changeDevEUI (self, DevEUI = None):
         self.deveui = DevEUI
         self.device_id = "lorawan:" + DevEUI
         self.rm.change_device_id(self.device_id)
+        self.iid  = SCHCParser.getdeviid(AppSKey=self.appskey, DevEUI=self.deveui)
 
     def changeAppSKey (self, AppSKey = None):
         self.appskey = AppSKey
+        self.iid  = SCHCParser.getdeviid(AppSKey=self.appskey, DevEUI=self.deveui)
 
     def change_ruleid (self, oldrule_id, new_ruleid):
         for a in self.rm._ctxt[0]['SoR']:
@@ -55,36 +57,42 @@ class SCHCParser:
         dprint(iid)
         return iid
 
-    def generateIPv6UDP(self, comp_ruleID, DevEUI, AppSKey, dev_prefix, ipv6_dst, udp_data):
-
-        DevEUI = self.deveui
-        AppSKey = self.appskey
+    def generateIPv6UDP(self, comp_ruleID, dev_prefix = "fe80::" , ipv6_dst = "fe80::1", udp_data = bytearray(50)):
 
         rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=comp_ruleID)
 
         if rule is not None:
             #print(rule[T_COMP])
-            for e in rule[T_COMP]:
-                if e[T_FID] == 'IPV6.TC':
-                    tc = e[T_TV]
-                if e[T_FID] == 'IPV6.FL':
-                    fl = e[T_TV]
-                if e[T_FID] == 'IPV6.NXT':
-                    nh = e[T_TV]
-                if e[T_FID] == 'IPV6.HOP_LMT':
-                    hl = e[T_TV]
-                if e[T_FID] == 'UDP.DEV_PORT':
-                    sport = e[T_TV]
-                if e[T_FID] == 'UDP.APP_PORT':
-                    dport = e[T_TV]
-        else:
-            return None
+            if T_COMP in rule: 
+                for e in rule[T_COMP]:
+                    if e[T_FID] == 'IPV6.TC':
+                        tc = e[T_TV]
+                    if e[T_FID] == 'IPV6.FL':
+                        fl = e[T_TV]
+                    if e[T_FID] == 'IPV6.NXT':
+                        nh = e[T_TV]
+                    if e[T_FID] == 'IPV6.HOP_LMT':
+                        hl = e[T_TV]
+                    if e[T_FID] == 'UDP.DEV_PORT':
+                        sport = e[T_TV]
+                    if e[T_FID] == 'UDP.APP_PORT':
+                        dport = e[T_TV]
 
+            elif T_NO_COMP in rule:
+                tc = 0
+                fl = 0
+                nh = 17
+                hl = 255
+                sport = 23616
+                dport = 12400
+                dev_prefix = "fe80::"
+                #print("No compress")
 
-        iid  = SCHCParser.getdeviid(AppSKey=AppSKey, DevEUI=DevEUI)
+            else:
+                return None
 
         ipv6 = IPv6()
-        ipv6.src = dev_prefix + str(iid)[0:4] + ":" + str(iid)[4:8] + ":" + str(iid)[8:12] + ":" +str(iid)[12:16]
+        ipv6.src = dev_prefix + str(self.iid)[0:4] + ":" + str(self.iid)[4:8] + ":" + str(self.iid)[8:12] + ":" +str(self.iid)[12:16]
         ipv6.dst = ipv6_dst
         ipv6.tc = tc
         ipv6.fl = fl
@@ -95,7 +103,7 @@ class SCHCParser:
         udp.sport = sport
         udp.dport = dport
 
-        dprint ("dev_prefix", dev_prefix, " ipv6_dst ", ipv6_dst, " tc ", tc, " fl ", fl, " nh ", nh, " hl ", hl, sport, dport )
+        dprint ("pkt_1 ", "ipv6.src", ipv6.src, " ipv6_dst ", ipv6_dst, " tc ", tc, " fl ", fl, " nh ", nh, " hl ", hl, sport, dport)
         
         ipv6_udp = ipv6/udp/udp_data
 
@@ -104,12 +112,35 @@ class SCHCParser:
     def bytes_needed(value):
         b = math.ceil(value/8) 
         return b
+    
+    def get_checksum (iid, dev_prefix, app_prefix, app_iid, tc, fl, nh, hl, sport, dport, udp_data):
 
-    def parse_schc_msg(self, schc_pkt, appskey=None, ruleID=None, chk_sum = None, udp_len = None):
+        ipv6 = IPv6()
+        ipv6.src = dev_prefix + str(iid)[0:4] + ":" + str(iid)[4:8] + ":" + str(iid)[8:12] + ":" +str(iid)[12:16]
+        ipv6.dst = app_prefix + app_iid
+        ipv6.tc = tc
+        ipv6.fl = fl
+        ipv6.nh = nh
+        ipv6.hl = hl
+
+        udp = UDP()
+        udp.sport = sport
+        udp.dport = dport
+
+        ipv6_udp = bytes(ipv6/udp/udp_data)
+        chk_sum = int.from_bytes(ipv6_udp[46:48],"big")
+
+        return chk_sum
+
+    def parse_schc_msg(self, schc_pkt, appskey=None, ruleID=None, chk_sum = None, udp_len = None, ipv6_len = None, deviid= None):
 
         #if ruleID then add 8 bits at first before BitBuffer
+
         if ruleID is not None:
+            ruleID = ruleID.to_bytes(1, 'big')
             schc_pkt = ruleID + schc_pkt
+
+        deviid = SCHCParser.getdeviid(AppSKey=self.appskey, DevEUI=self.deveui)
 
         schc_bbuf = BitBuffer(schc_pkt)
         rule = self.rm.FindRuleFromSCHCpacket(schc=schc_bbuf, device=self.device_id)
@@ -177,9 +208,9 @@ class SCHCParser:
                 }
             }
 
-        else:
+        elif T_COMP in rule:
+        
                 decomp = Decompressor()
-
                 parsed_pkt = decomp.decompress(schc=schc_bbuf, rule=rule, direction=T_DIR_UP)
                 residue = schc_bbuf.get_bits_as_buffer(nb_bits=schc_bbuf._rpos-8, position=8)
                 resi_len = residue._wpos
@@ -192,6 +223,8 @@ class SCHCParser:
                 schc_len = SCHCParser.bytes_needed(resi_len) + 1 # Rule is on 1 byte
                 data = binascii.hexlify(schc_pkt[schc_len:]).decode('ascii')
                 data_len = len(schc_pkt[schc_len:])
+                udp_len = data_len + 8
+                ipv6_len = udp_len
 
                 keys = list(parsed_pkt.keys())
                 values = list(parsed_pkt.values())
@@ -213,6 +246,10 @@ class SCHCParser:
                             comp.update({YANG_ID[key[0]][1]: udp_len})
                         elif YANG_ID[key[0]][1] == "fid-udp-checksum":
                             comp.update({YANG_ID[key[0]][1]: chk_sum})
+                        elif YANG_ID[key[0]][1] == "fid-ipv6-payloadlength": 
+                            comp.update({YANG_ID[key[0]][1]: ipv6_len})
+                        elif YANG_ID[key[0]][1] == "fid-ipv6-deviid":
+                            comp.update({YANG_ID[key[0]][1]: deviid})
                         else:
                             comp.update({YANG_ID[key[0]][1]: values[i][0]})
                     except:
@@ -222,7 +259,108 @@ class SCHCParser:
                       "RuleIDLength":ruleid_length,
                       "Compression":comp
                 }
-      
+        else: # "NO COMPRESSION"
+
+            parser = Parser(self)
+            t_dir = T_DIR_UP
+
+            # We parse the IPv6 Packet
+            parsed_pkt, residue, parsing_error = parser.parse(schc_pkt[1:], t_dir, layers=["IPv6", "UDP"])
+
+            keys = list(parsed_pkt.keys())
+            values = list(parsed_pkt.values())
+
+            nocomp = {}
+
+            for i, value in enumerate(values): # convert bytes to hexa 
+                if isinstance(value[0], bytes):
+                    values[i][0] =  binascii.hexlify(value[0]).decode('ascii')
+                        
+            for i, key in enumerate(keys):
+                nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+
+            # Header and IID velidation:          
+
+            tc = 0 # Not tested
+            fl = 0 # Not Tested
+            nh = 17
+            hl = 255 # Not Tested
+            sport = 23616
+            dport = 12400
+            dev_prefix = "fe80::"
+            app_prefix = "fe80::"
+            app_iid = "1"
+            udp_len = 58
+            check_sum = 8034
+            ipv6_pay_len = 58
+            udp_data = bytearray(udp_len-8)
+            chk_sum = SCHCParser.get_checksum(self.iid, dev_prefix, app_prefix, app_iid, tc, fl, nh, hl, sport, dport, udp_data)
+
+            dprint("chsm", chk_sum)
+
+            for i, key in enumerate(keys):
+                try:
+                    if YANG_ID[key[0]][1] == "fid-ipv6-deviid":
+                        dprint("iid", values[i][0], self.iid)
+                        if values[i][0] == self.iid:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "DevIID not valid"})
+                    if YANG_ID[key[0]][1] == "fid-udp-dev-port":
+                        if values[i][0] == dport:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "UDP Dev port not valid"})
+                    if YANG_ID[key[0]][1] == "fid-udp-app-port":
+                        if values[i][0] == sport:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "UDP App port not valid"})  
+                    if YANG_ID[key[0]][1] == "fid-udp-length":
+                        if values[i][0] == udp_len:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "UDP length not valid"})  
+                    if YANG_ID[key[0]][1] == "fid-udp-checksum":
+                        if values[i][0] == check_sum:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "UDP checksum not valid"})  
+                    if YANG_ID[key[0]][1] == "fid-ipv6-payloadlength":
+                        if values[i][0] == ipv6_pay_len:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 payload length not valid"})  
+                    if YANG_ID[key[0]][1] == "fid-ipv6-nextheader":
+                        if values[i][0] == nh:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 next header not valid"})  
+                    if YANG_ID[key[0]][1] == "fid-ipv6-devprefix": 
+                        if values[i][0] == dev_prefix:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 Dev Prefix not valid"})  
+                    if YANG_ID[key[0]][1] == "fid-ipv6-appprefix":
+                        if values[i][0] == app_prefix:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 App Prefix not valid"})  
+                    if YANG_ID[key[0]][1] == "fid-ipv6-appiid": 
+                        if values[i][0] == app_iid:
+                            nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                        else:
+                            nocomp.update({YANG_ID[key[0]][1]: "IPv6 App IID not valid"})  
+                    else:
+                        nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
+                except:
+                        comp.update({keys[i][0]: values[i][0]})
+
+            x = { "RuleIDValue":ruleid_value, 
+                  "RuleIDLength":ruleid_length,
+                  "Compression":nocomp
+            }
+
         y = json.dumps(x)
 
         return y
@@ -249,10 +387,11 @@ class SCHCParser:
             if T_COMP in rule:
                 # Apply compression rule
                 schc_packet = comp.compress(rule, parsed_packet, residue, t_dir)
-                vec = binascii.hexlify(packet).decode('ascii')
-                chk_sum = vec[92:96]
-                udp_len = vec[88:92]
-                json = self.parse_schc_msg(schc_packet._content, chk_sum = chk_sum, udp_len = udp_len)
+                udp_len = int.from_bytes(packet[44:46],"big")
+                chk_sum = int.from_bytes(packet[46:48],"big")
+                deviid = int.from_bytes(packet[16:24],"big")
+                ipv6_len = int.from_bytes(packet[4:6],"big")
+                json = self.parse_schc_msg(schc_packet._content, chk_sum = chk_sum, udp_len = udp_len, ipv6_len = ipv6_len, deviid=deviid)
             if T_FRAG in rule:
                 # To be done
                 return None, None
@@ -260,4 +399,4 @@ class SCHCParser:
             print("Rule in packet does not match hint")
             return None, None
         dprint (schc_packet._content)
-        return json, binascii.hexlify(schc_packet._content)
+        return json, schc_packet._content
