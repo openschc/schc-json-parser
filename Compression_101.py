@@ -25,19 +25,20 @@ ipv6_dst = "fe80::1"
 udp_data = bytearray(50) # We create a 50 bytes of zeros
 
 uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_dst, udp_data)
-#print(binascii.hexlify(uncompressed).decode('ascii'))
+print(binascii.hexlify(uncompressed).decode('ascii'))
 
 # Let's compress this packet using the rule 101
 JSON_Hint = {"RuleIDValue": comp_ruleID}
 json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
 
 # We can now print the schc packet in hexa:
-#print(schc_pkt)
+print(binascii.hexlify(schc_pkt).decode('ascii'))
 
 # Or we can also print the schc packet in JSON Format:
-#print(json)
+print(json)
 
-schc_parsed_comp = parser.parse_schc_msg(schc_pkt=schc_pkt)
+# We can parse the SCHC Packet
+#schc_parsed_comp = parser.parse_schc_msg(schc_pkt=schc_pkt)
 
-print(schc_parsed_comp)
+#print(schc_parsed_comp)
 

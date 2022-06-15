@@ -90,6 +90,10 @@ class SCHCParser:
 
             else:
                 return None
+        
+        else:
+            print("Rule does not exist")
+            return None
 
         ipv6 = IPv6()
         ipv6.src = dev_prefix + str(self.iid)[0:4] + ":" + str(self.iid)[4:8] + ":" + str(self.iid)[8:12] + ":" +str(self.iid)[12:16]
@@ -117,12 +121,11 @@ class SCHCParser:
 
         ipv6 = IPv6()
         ipv6.src = dev_prefix + str(iid)[0:4] + ":" + str(iid)[4:8] + ":" + str(iid)[8:12] + ":" +str(iid)[12:16]
-        ipv6.dst = app_prefix + app_iid[14]
+        ipv6.dst = app_prefix + app_iid[15]
         ipv6.tc = tc
         ipv6.fl = fl
         ipv6.nh = nh
         ipv6.hl = hl
-
         udp = UDP()
         udp.sport = sport
         udp.dport = dport
@@ -240,6 +243,28 @@ class SCHCParser:
                 comp.update({"Data": data})
                 comp.update({"DataLength": data_len})
 
+                #chk_sum = SCHCParser.get_checksum (self.iid, dev_prefix, app_prefix, app_iid, tc, fl, nh, hl, sport, dport, udp_data)
+
+                for e in rule[T_COMP]:
+                    if e[T_FID] == 'IPV6.TC':
+                        tc = e[T_TV]
+                        comp.update({YANG_ID[e[T_FID]][1]: tc})
+                    if e[T_FID] == 'IPV6.FL':
+                        fl = e[T_TV]
+                        comp.update({YANG_ID[e[T_FID]][1]: fl})
+                    if e[T_FID] == 'IPV6.NXT':
+                        nh = e[T_TV]
+                        comp.update({YANG_ID[e[T_FID]][1]: nh})
+                    if e[T_FID] == 'IPV6.HOP_LMT':
+                        hl = e[T_TV]
+                        comp.update({YANG_ID[e[T_FID]][1]: hl})
+                    if e[T_FID] == 'UDP.DEV_PORT':
+                        sport = e[T_TV]
+                        comp.update({YANG_ID[e[T_FID]][1]: sport})
+                    if e[T_FID] == 'UDP.APP_PORT':
+                        dport = e[T_TV]
+                        comp.update({YANG_ID[e[T_FID]][1]: dport})
+
                 for i, key in enumerate(keys):
                     try:
                         if YANG_ID[key[0]][1] == "fid-udp-length":
@@ -254,6 +279,23 @@ class SCHCParser:
                             comp.update({YANG_ID[key[0]][1]: values[i][0]})
                     except:
                         comp.update({keys[i][0]: values[i][0]})
+
+                #print(comp["fid-ipv6-appiid"])
+
+                chk_sum = SCHCParser.get_checksum (self.iid, 
+                                                   comp["fid-ipv6-devprefix"][0:4]+"::",
+                                                   comp["fid-ipv6-appprefix"][0:4]+"::",
+                                                   comp["fid-ipv6-appiid"],
+                                                   comp["fid-ipv6-trafficclass"],
+                                                   comp["fid-ipv6-flowlabel"],
+                                                   comp["fid-ipv6-nextheader"],
+                                                   comp["fid-ipv6-hoplimit"],
+                                                   comp["fid-udp-dev-port"],
+                                                   comp["fid-udp-app-port"],
+                                                   bytearray(data_len))
+                
+                comp.update({YANG_ID[key[0]][1]: chk_sum})
+                #print(chk_sum)
 
                 x = { "RuleIDValue":ruleid_value, 
                       "RuleIDLength":ruleid_length,
@@ -347,7 +389,7 @@ class SCHCParser:
                         else:
                             nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     if YANG_ID[key[0]][1] == "fid-ipv6-appiid": 
-                        print(app_iid, values[i][0])
+                        dprint(app_iid, values[i][0])
                         if values[i][0] == app_iid:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
