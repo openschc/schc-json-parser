@@ -143,9 +143,9 @@ class SCHCParser:
         s = ~s
 
         if struct.pack("H", 1) != b"\x00\x01":  # big endian
-            return ((s >> 8) & 0xff) | s << 8
+            return ((s >> 8) & 0xff) | s << 8 & 0xffff
         else:
-            return SCHCParser.endian_transform(s) & 0xffff
+            return s
    
     def get_checksum (iid, dev_prefix, app_prefix, app_iid, sport, dport, udp_data):
 
