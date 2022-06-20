@@ -388,7 +388,3 @@ class Unparser:
 
         hexdump(full_packet)
         return full_packet
-
-        
-
-    
