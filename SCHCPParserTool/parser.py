@@ -257,9 +257,6 @@ class SCHCParser:
                 dprint(residue, resi_len) 
                 schc_len = SCHCParser.bytes_needed(resi_len) + 1 # Rule is on 1 byte
 
-                print(type(resi_len), resi_len)
-                print(type(schc_len), schc_len)
-
                 pad_len = schc_len*8-8 - resi_len
                 padding = format(0, "0" + str(pad_len) + "b")
                 
