@@ -86,7 +86,7 @@ class SCHCParser:
                 sport = 23616
                 dport = 12400
                 dev_prefix = "fe80::"
-                #print("No compress")
+                print("No compress")
 
             else:
                 return None
@@ -101,7 +101,9 @@ class SCHCParser:
         ipv6.tc = tc
         ipv6.fl = fl
         ipv6.nh = nh
-        ipv6.hl = hl
+        ipv6.hlim = hl
+
+        print(ipv6.src)
 
         udp = UDP()
         udp.sport = sport
@@ -110,7 +112,8 @@ class SCHCParser:
         dprint ("pkt_1 ", "ipv6.src", ipv6.src, " ipv6_dst ", ipv6_dst, " tc ", tc, " fl ", fl, " nh ", nh, " hl ", hl, sport, dport)
         
         ipv6_udp = ipv6/udp/udp_data
-
+       
+        print (bytes(ipv6_udp))
         return bytes(ipv6_udp)
 
     def bytes_needed(value):
@@ -119,10 +122,15 @@ class SCHCParser:
 
     def getbytesipv6(ipv6_str):
         # type: (string) -> bytes
+        nb_zeros = 8 - len(ipv6_str.split(":"))+1
+        zero = 0
         ipv6_bytes = b""
         for value in ipv6_str.split(":"):
             if value != "":
-                ipv6_bytes += int(value,16).to_bytes(4,'big')
+                ipv6_bytes += int(value,16).to_bytes(2,'big')
+            else:
+                for i in range(nb_zeros):
+                    ipv6_bytes += zero.to_bytes(2,'big')
         return ipv6_bytes
 
     def compute_chksm(pkt):
@@ -133,19 +141,17 @@ class SCHCParser:
         s = (s >> 16) + (s & 0xffff)
         s += s >> 16
         s = ~s
-        return SCHCParser.endian_transform(s) & 0xffff
 
-    def endian_transform(s):
-        if struct.pack("H", 1) == b"\x00\x01":  # big endian
-            return s
-        else:
+        if struct.pack("H", 1) != b"\x00\x01":  # big endian
             return ((s >> 8) & 0xff) | s << 8
-    
+        else:
+            return SCHCParser.endian_transform(s) & 0xffff
+   
     def get_checksum (iid, dev_prefix, app_prefix, app_iid, sport, dport, udp_data):
 
         ipv6_src = dev_prefix + str(iid)[0:4] + ":" + str(iid)[4:8] + ":" + str(iid)[8:12] + ":" +str(iid)[12:16]
         ipv6_dst = app_prefix + app_iid
-        protocol=17
+        protocol = 17
         udp_len = len(udp_data) + 8
         dprint(ipv6_dst)
  
@@ -153,10 +159,10 @@ class SCHCParser:
         b = SCHCParser.getbytesipv6 (ipv6_dst)
         c = protocol.to_bytes(2,'big')
         d = udp_len.to_bytes(2,'big')
-        pseudo_h = a+b+c+d
+        pseudo_h = a + b + c + d
         udp_h = sport.to_bytes(2,'big') + dport.to_bytes(2,'big') + udp_len.to_bytes(2,'big')
 
-        chksum = SCHCParser.compute_chksm(pseudo_h+udp_h)
+        chksum = SCHCParser.compute_chksm(pseudo_h + udp_h)
         dprint("checksum", chksum)
         return chksum
 
