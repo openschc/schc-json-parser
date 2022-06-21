@@ -19,7 +19,7 @@ parser.changeAppSKey (AppSKey=AppSKey)
 
 # Now, we will create a IPV6/UDP packet according to the lorawan.json RuleID
 
-comp_ruleID = 101
+comp_ruleID = 100
 dev_prefix = "fe80::" 
 ipv6_dst = "fe80::1"
 udp_data = bytearray(50) # We create a 50 bytes of zeros
