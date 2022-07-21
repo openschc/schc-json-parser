@@ -371,6 +371,8 @@ class SCHCParser:
             for i, key in enumerate(keys):
                 nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
 
+            print (nocomp["fid-udp-length"])
+
             # Header and IID velidation:
 
             tc = 0 # Not tested
@@ -384,8 +386,8 @@ class SCHCParser:
             prefix_l = "fe80000000000000"
             app_iid = "::1"
             app_iid_l = "0000000000000001" 
-            udp_len = 58
-            ipv6_pay_len = 58
+            udp_len = nocomp["fid-udp-length"]
+            ipv6_pay_len = udp_len
             udp_data = bytearray(udp_len-8) # bytearray full of zeros
             chk_sum = SCHCParser.get_checksum(self.iid, sport, dport, udp_data, dev_prefix = dev_prefix, app_prefix = app_prefix, app_iid = app_iid)
 
@@ -410,6 +412,7 @@ class SCHCParser:
                         else:
                             nocomp.update({YANG_ID[key[0]][1]: "Not valid"})  
                     elif YANG_ID[key[0]][1] == "fid-udp-length":
+                        #print ("udp_len_dut:",values[i][0])
                         if values[i][0] == udp_len:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:

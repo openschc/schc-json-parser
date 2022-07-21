@@ -14,12 +14,12 @@ parser.changeDevEUI (DevEUI=DevEUI)
 parser.changeAppSKey (AppSKey=AppSKey)
 
 ruleID = 22
-udp_data = bytearray(50)
+udp_data = bytearray(200)
 
-no_compress_pkt = parser.generateIPv6UDP(ruleID, udp_data)
+print (udp_data)
+no_compress_pkt = parser.generateIPv6UDP(ruleID, udp_data = udp_data)
 
 print(no_compress_pkt)
 #no compress packets
 schc_parsed_comp = parser.parse_schc_msg(schc_pkt=no_compress_pkt, ruleID=ruleID)
-
 print(schc_parsed_comp)
