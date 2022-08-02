@@ -27,11 +27,14 @@ udp_data = bytearray(10) # We create a 50 bytes of zeros
 uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_dst, udp_data = udp_data)
 print(binascii.hexlify(uncompressed).decode('ascii'))
 
+from_dut = binascii.unhexlify("6000000000091101fe800000000000000000000000000001fe80000000000000cf83a40938421ab820705c400009bfa100")
+print("from dut", from_dut)
 # Let's compress this packet using the rule 101
-JSON_Hint = {"RuleIDValue": comp_ruleID, 
-             "Direction": "UP"}
 
-json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
+JSON_Hint = {"RuleIDValue": comp_ruleID, 
+             "Direction": "DW"}
+
+json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = from_dut, hint=JSON_Hint)
 
 # We can now print the schc packet in hexa:
 print(binascii.hexlify(schc_pkt).decode('ascii'))
