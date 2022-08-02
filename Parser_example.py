@@ -38,3 +38,7 @@ print(schc_parsed_1)
 #Compress packets
 schc_parsed_comp = SCHCParser.parse_schc_msg(parser, schc_pkt=compress_pkt)
 print(schc_parsed_comp)
+
+compress_pkt_one_byte = b'e\xe0\x00\x00'
+schc_parsed_comp_byte = SCHCParser.parse_schc_msg(parser, schc_pkt=compress_pkt_one_byte)
+print(schc_parsed_comp_byte)

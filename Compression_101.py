@@ -22,13 +22,15 @@ parser.changeAppSKey (AppSKey=AppSKey)
 comp_ruleID = 101
 dev_prefix = "fe80::" 
 ipv6_dst = "fe80::1"
-udp_data = bytearray(50) # We create a 50 bytes of zeros
+udp_data = bytearray(10) # We create a 50 bytes of zeros
 
-uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_dst, udp_data)
+uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_dst, udp_data = udp_data)
 print(binascii.hexlify(uncompressed).decode('ascii'))
 
 # Let's compress this packet using the rule 101
-JSON_Hint = {"RuleIDValue": comp_ruleID}
+JSON_Hint = {"RuleIDValue": comp_ruleID, 
+             "Direction": "UP"}
+
 json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
 
 # We can now print the schc packet in hexa:

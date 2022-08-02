@@ -28,7 +28,9 @@ uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_dst, udp_dat
 print(binascii.hexlify(uncompressed).decode('ascii'))
 
 # Let's compress this packet using the rule 101
-JSON_Hint = {"RuleIDValue": comp_ruleID}
+JSON_Hint = {"RuleIDValue": comp_ruleID, 
+             "Direction": "UP"}
+
 json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
 
 # We can now print the schc packet in hexa:

@@ -60,6 +60,8 @@ class SCHCParser:
 
         rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=comp_ruleID)
 
+        print(len(udp_data))
+
         if rule is not None:
             #print(rule[T_COMP])
             if T_COMP in rule: 
@@ -461,7 +463,9 @@ class SCHCParser:
     def generate_schc_msg(self, packet, hint = {"RuleIDValue": 101}):
         # packet -> IPv6/UDP in bytes
         # hint -> JSON format
+
         t_dir = T_DIR_UP
+        t_dir = hint["Direction"]
         parser = Parser(self)
         comp = Compressor(self)
 
