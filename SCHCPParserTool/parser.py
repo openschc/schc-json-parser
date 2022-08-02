@@ -113,11 +113,12 @@ class SCHCParser:
 
         second = int(d + e + f, 2).to_bytes(4,'big')
 
+
         ip_src = SCHCParser.getbytesipv6(ipv6_src)
         ip_dst = SCHCParser.getbytesipv6(ipv6_dst)
 
         ipv6_h = first + second + ip_src + ip_dst
-
+        
         chsm = SCHCParser.get_checksum (self.iid, sport, dport, udp_data, dev_prefix = "fe80::", app_prefix = "fe80::" , app_iid = "::1", ipv6_dst = ipv6_dst)
 
         g = sport.to_bytes(2,'big')
@@ -128,6 +129,11 @@ class SCHCParser:
         udp = g + h + i + j + udp_data
 
         ipv6_udp = ipv6_h + udp 
+
+        if comp_ruleID == 101:
+            ipv6_h = first + second + ip_dst + ip_src
+            udp = h + g + i + j + udp_data
+            ipv6_udp = ipv6_h + udp
         
         return ipv6_udp
 

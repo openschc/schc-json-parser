@@ -21,11 +21,25 @@ parser.changeAppSKey (AppSKey=AppSKey)
 
 comp_ruleID = 101
 dev_prefix = "fe80::" 
-ipv6_dst = "fe80::1"
+ipv6_app = "fe80::1"
 udp_data = bytearray(10) # We create a 50 bytes of zeros
 
-uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_dst, udp_data = udp_data)
+uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_app, udp_data = udp_data)
 print(binascii.hexlify(uncompressed).decode('ascii'))
+
+JSON_Hint = {"RuleIDValue": comp_ruleID, 
+             "Direction": "DW"}
+
+json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = uncompressed, hint=JSON_Hint)
+
+# We can now print the schc packet in hexa:
+print(binascii.hexlify(schc_pkt).decode('ascii'))
+
+# Or we can also print the schc packet in JSON Format:
+print(json)
+
+
+# DUT Example
 
 from_dut = binascii.unhexlify("6000000000091101fe800000000000000000000000000001fe80000000000000cf83a40938421ab820705c400009bfa100")
 print("from dut", from_dut)
@@ -34,16 +48,16 @@ print("from dut", from_dut)
 JSON_Hint = {"RuleIDValue": comp_ruleID, 
              "Direction": "DW"}
 
-json, schc_pkt = SCHCParser.generate_schc_msg(parser, packet = from_dut, hint=JSON_Hint)
+json, schc_pkt_dut = SCHCParser.generate_schc_msg(parser, packet = from_dut, hint=JSON_Hint)
 
 # We can now print the schc packet in hexa:
-print(binascii.hexlify(schc_pkt).decode('ascii'))
+print(binascii.hexlify(schc_pkt_dut).decode('ascii'))
 
 # Or we can also print the schc packet in JSON Format:
 print(json)
 
 # We can parse the SCHC Packet
-#schc_parsed_comp = parser.parse_schc_msg(schc_pkt=schc_pkt)
+schc_parsed_comp = parser.parse_schc_msg(schc_pkt=schc_pkt_dut)
 
-#print(schc_parsed_comp)
+print(schc_parsed_comp)
 
