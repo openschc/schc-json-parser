@@ -226,7 +226,7 @@ class SCHCParser:
             w_value = schc_frag.win
             dtag_value = schc_frag.dtag
             fcn_value = schc_frag.fcn
-            payload = schc_frag.payload
+            #payload = schc_frag.payload
             rcs = schc_frag.mic
             #schc_frag.bitmap
             all1_b = 2**rule[T_FRAG][T_FRAG_PROF][T_FRAG_FCN]-1
@@ -238,11 +238,13 @@ class SCHCParser:
             ack_request = schc_frag.ack_request
             #schc_frag.cbit
             #schc_frag.packet
+            schc_len = SCHCParser.bytes_needed(ruleid_length + w_length + fcn_length)
+            payload = binascii.hexlify(schc_pkt[schc_len:]).decode('ascii')
             abort = schc_frag.abort
-            #print(payload)
             payload_hexa = None
             if payload is not None:
-                payload_hexa = binascii.hexlify(payload._content).decode('ascii')
+                payload_hexa = payload
+                payload_len = len(schc_pkt[schc_len:])
             rcs_hexa = None
             if rcs is not None:
                 rcs_hexa = binascii.hexlify(rcs).decode('ascii')
@@ -258,7 +260,8 @@ class SCHCParser:
                     "WValue":w_value,
                     "DTagValue":dtag_value,
                     "FCNValue":fcn_value,
-                    "Payload":payload_hexa,
+                    "FragmentPayload":payload_hexa,
+                    "FragmentPayloadLength":payload_len,
                     "RCS":rcs_hexa,
                     "AllOne":all1,
                     "abort":abort,

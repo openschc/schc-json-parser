@@ -451,5 +451,5 @@ class frag_receiver_rx(frag_rx):
                 # this is a ACK REQ message
                 self.ack_request = True
                 return
-        self.payload = self.packet_bbuf.get_bits_as_buffer()
+        self.payload = self.packet_bbuf.get_bits_as_buffer(nb_bits=packet_bbuf._rpos-8, position=8)
         #TODO: Parse ACK REQ
