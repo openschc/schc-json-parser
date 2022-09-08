@@ -21,8 +21,12 @@ class SCHCParser:
         self.rm = RM.RuleManager()
         self.rm.Add(file=self.rule_file)
         self.iid  = SCHCParser.getdeviid(AppSKey=self.appskey, DevEUI=self.deveui)
+        # Variables specific for reassembly
         self.fcn_len = 6
         self.bitmap = None
+        self.all1_received = False
+        self.rcs = None
+        self.all1_fragment = ""
 
     def get_file_path(self):
         target = "lorawan.json"
@@ -208,16 +212,18 @@ class SCHCParser:
                 break
         return l
 
-    def get_bitmap_hex(a, fcn, w):
-        a = a[w]
+    def get_bitmap_hex(bitmap = [], fcn = 62, w = 0, faux = False):
+        a = bitmap[w]
         missing = []
         if fcn == len(a):
             a = a[:SCHCParser.get_lastpos(a)]
         for idx, x in enumerate(a[:len(a)-fcn-1]):
             if x == 0:
                 missing.append(idx)
-        if len(missing) != 0:
-            print(len(missing))
+        print('missing', missing)
+        print(bitmap)
+        if len(missing) != 0 :
+            #print(len(missing))
             bitmap_length = SCHCParser.bytes_needed(missing[-1]) 
             bitmap_str = "".join([str(_) for _ in a[:bitmap_length*8]])
             bValues = [bitmap_str[i:i+8] for i in range(0, len(bitmap_str), 8)]
@@ -225,7 +231,27 @@ class SCHCParser:
             for bValue in bValues:
                 local_bytearray = int(bValue, 2).to_bytes(len(bValue) // 8, byteorder='big')
                 bitmap_bytearray += local_bytearray
-            print(bitmap_bytearray)
+            #print(bitmap_bytearray)
+            return bitmap_bytearray
+
+        if faux == True: #case when the fragment missing is the one just before all-1
+            tiles_in_bitmap = sum(bitmap[w])
+            if tiles_in_bitmap == 0 :
+                a = bitmap[w-1]
+                bitmap_length = SCHCParser.bytes_needed(sum(a)) 
+            else:
+                a = bitmap[w]
+                bitmap_length = SCHCParser.bytes_needed(sum(a)) 
+            #print("bitmap_length",bitmap_length)
+            bitmap_str = "".join([str(_) for _ in a[:bitmap_length*8]])
+            #print("bitmap_str",bitmap_str)
+            bValues = [bitmap_str[i:i+8] for i in range(0, len(bitmap_str), 8)]
+            #print("bValues", bValues)
+            bitmap_bytearray = bytearray()
+            for bValue in bValues:
+                local_bytearray = int(bValue, 2).to_bytes(len(bValue) // 8, byteorder='big')
+                bitmap_bytearray += local_bytearray
+                #print(bitmap_bytearray)
             return bitmap_bytearray
         else:
             return False
@@ -239,21 +265,33 @@ class SCHCParser:
                 payload += "".join([str(_) for _ in a[idx][:]])
             else:
                 payload += "".join([str(_) for _ in a[idx][:last]])
-
         return payload
 
     def reassembly(self, fragment = None, tiles_all1 = True):
+
+        # Initialize values to create ACK later
+        c = 1
+        rcs_check = True
+
+        # Create a new bitmap and tiles vectors if not done already
         if self.bitmap is None:
             self.bitmap = [SCHCParser.get_void_bitmap(self)]
             self.tiles = [SCHCParser.get_void_bitmap(self)]
 
         # Get parameters from fragment:
-
         schc_frag = json.loads(fragment)
+        ruleid_value = schc_frag['RuleIDValue']
+        ruleid_length = schc_frag["RuleIDLength"]
+        w_length = schc_frag['Fragmentation']["WLength"]
+        w_value = schc_frag['Fragmentation']['WValue']
+        dtag_value = schc_frag['Fragmentation']['DTagValue']
+        dtag_length = schc_frag['Fragmentation']['DtagLength']
+        rcs = schc_frag['Fragmentation']["RCS"]
         w = schc_frag['Fragmentation']['WValue']
         fcn = schc_frag['Fragmentation']['FCNValue']
         nb_tiles = schc_frag['Fragmentation']['FragmentPayloadLength']//schc_frag['Fragmentation']['TileLength']
         frag_payload = schc_frag['Fragmentation']['FragmentPayload']
+
         SCHCParser.get_bitmap(self, bitmap = self.bitmap, 
                                     tiles = self.tiles,
                                     frag_payload = frag_payload,
@@ -262,25 +300,138 @@ class SCHCParser:
                                     fcn = fcn, 
                                     nb_tiles = nb_tiles)
         # print(self.bitmap)
+
+        if fcn == len(self.bitmap[0]):
+            self.all1_received = True
+            self.rcs = rcs
+            self.all1_fragment = fragment
+
         # Check for missing tiles, if missing we get the bitmap in hexa to create the ACK
-        bitmap_hex = SCHCParser.get_bitmap_hex(self.bitmap, fcn, w)
-        if bitmap_hex == False and fcn == 63:
+        bitmap_hex = SCHCParser.get_bitmap_hex(bitmap = self.bitmap, fcn = fcn , w = w)
+        print(bitmap_hex)
+
+        # There is no apparent tiles missing and we receive an all1
+        if bitmap_hex == False and fcn == len(self.bitmap[0]):
             payload = SCHCParser.reassembly_tiles(self)
             pay_hex = binascii.unhexlify(payload)
-            print("start reassembly, payload:")
+
+            #print(payload)
+            rcs_pay = binascii.crc32(pay_hex)
+            rcs_int = int(rcs, 16)
+            rcs_check = rcs_pay == rcs_int
+            c = 1
+            print("crc check", rcs_pay, rcs_int, rcs_check)
             print(payload)
-            print("crc", binascii.crc32(pay_hex))
-        else:
-            # Create the falure ACK 
-            print(bitmap_hex)
-        return bitmap_hex
+
+            if rcs_check == False:
+                SCHCParser.fix_bitmap(self, nb_tiles,w)
+                bitmap_hex = SCHCParser.get_bitmap_hex(bitmap = self.bitmap, fcn = fcn, w = w, faux = True)
+                c = 0
+                #print("bitmap_hex",bitmap_hex)
+
+
+            ack = SCHCParser.generate_schc_ack (
+                ruleid_value = ruleid_value, 
+                ruleid_length = ruleid_length, 
+                dtag_value = dtag_value, 
+                dtag_length = dtag_length, 
+                w_length = w_length,
+                w_value = w_value, 
+                c = c, 
+                bitmap = bitmap_hex,
+                rcs_check = rcs_check)
+            return ack
+
+        if bitmap_hex != False:
+            # Put the c bit to 0 indicating that there are missing tiles
+            c = 0
+            ack = SCHCParser.generate_schc_ack (
+                ruleid_value = ruleid_value, 
+                ruleid_length = ruleid_length, 
+                dtag_value = dtag_value, 
+                dtag_length = dtag_length, 
+                w_length = w_length,
+                w_value = w_value, 
+                c = c, 
+                bitmap = bitmap_hex,
+                rcs_check = rcs_check)
+            return ack
+
+        # The all1 has been already received and we receive another packet after:
+        if self.all1_received and fcn != len(self.bitmap[0]):
+            frag = self.all1_fragment
+            ack = SCHCParser.reassembly(self, fragment = frag, tiles_all1 = tiles_all1)
+            return ack
+
+            #payload = SCHCParser.reassembly_tiles(self)
+            #pay_hex = binascii.unhexlify(payload)
+            #print(binascii.hexlify(pay_hex))
+            # We compute the CRC
+            #rcs_pay = binascii.crc32(pay_hex)
+            #rcs_int = int(self.rcs, 16)
+            #rcs_check = rcs_pay == rcs_int
+            #c = 1
+            #print("crc check after all1", rcs_pay, rcs_int, rcs_check)
+
+        return None
+
+    def generate_schc_ack(ruleid_value = None, 
+                          ruleid_length = None, 
+                          dtag_value = None, 
+                          dtag_length = None, 
+                          w_length = None,
+                          w_value = None, c = 1 , 
+                          bitmap= None,
+                          rcs_check = True):
+
+        bitmap_hexa = bitmap
+        w_b = format(w_value, "02b") # 2
+        c_b = format(c, "01b") # 1
+        print("c = ", c)
+        len_wc = len (w_b + c_b)
+        akc_header_len = SCHCParser.bytes_needed(len_wc)
+        padding = format(0, "0" + str(akc_header_len*8 - len_wc) + "b") # padding_len
+        ack = int(w_b + c_b + padding, 2).to_bytes(akc_header_len,'big')
+
+        # Add the bitmap if the checksum is not correct or if the are missing tiles:
+        if not rcs_check or bitmap:
+            print("rcschk",rcs_check)
+            print("bitmap", bitmap)
+            ack += bitmap
+            bitmap_hexa = str(binascii.hexlify(bitmap))[2:-1]
+
+        ack_hexa = str(binascii.hexlify(ack))
+        #print("ack_bin, ack_hex", w_b + c_b + padding, binascii.hexlify(ack))
+
+        x = {"AckHexa":ack_hexa[2:-1],
+             "RuleIDValue":ruleid_value, 
+             "RuleIDLength": ruleid_length,
+             "DTagValue":dtag_value,
+             "DtagLength":dtag_length,
+             "WLength": w_length,
+             "WValue": w_value,
+             "Cbit": c,
+             "Bitmap" : bitmap_hexa,
+             "Padding": padding,
+            }
+
+        y = json.dumps(x)
+        return y
 
     def get_bitmap(self, bitmap = None, tiles = None, frag_payload = None, tiles_all1=False, frags = [], w = 0, fcn = 62, nb_tiles = 0):
         #print('w=',w)
-
         # Separate frag peyload into tiles
         fragment_tiles = [frag_payload[i:i+20] for i in range(0, len(frag_payload), 20)]
-        #print("fragment_tiles",fragment_tiles)
+        print("len_bitmap", len(bitmap))
+        print("w", w)
+        
+        if w + 1 > len(bitmap):
+            print("condition", "True")
+            #print("FCN", fcn, w, len(bitmap)-1)
+            bitmap = [bitmap[w-1], SCHCParser.get_void_bitmap(self)]
+            tiles = [tiles[w-1], SCHCParser.get_void_bitmap(self)]
+        else:
+            print("condition", "False")
         if fcn == len(bitmap[w]) - 1 : # First Fragment
             bitmap[w] [0:nb_tiles] = [1 for i in range(nb_tiles)]
             tiles[w] [0:nb_tiles - 1] = fragment_tiles
@@ -320,8 +471,25 @@ class SCHCParser:
             #print (init , last)
         self.bitmap = bitmap
         self.tiles = tiles
-        print("tiles", tiles, len(tiles[0]))
+        #print("tiles", tiles, len(tiles[0]))
         return bitmap
+
+
+
+    def fix_bitmap(self, nb_tiles = 0, w = 0) :
+        #TODO verifier si w est bon avant
+        a = self.bitmap
+        tiles_in_bitmap = sum(a[w])
+        last = SCHCParser.get_lastpos(a[w])
+        print(tiles_in_bitmap)
+        if tiles_in_bitmap >= nb_tiles:
+            print(last)
+            a[w][last - nb_tiles:last] = [0 for i in range(nb_tiles)]
+        else:
+            a[w][:last] = [0 for i in range(last)]
+            remaining = nb_tiles - last
+            a[w-1][len(a[w]) - remaining:] = [0 for i in range(remaining)]
+        self.bitmap = a
 
     def parse_schc_msg(self, schc_pkt, ruleID = None):
 
@@ -349,23 +517,27 @@ class SCHCParser:
             mode = rule[T_FRAG][T_FRAG_MODE]
             dtag_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG]
             fcn_length = None
-            w_length = None
+            w_length = 0
             if mode == "AckOnError":
                 fcn_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_FCN]
                 w_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_W]
             tile_length = None
             if T_FRAG_TILE in rule[T_FRAG][T_FRAG_PROF]:
                 tile_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_TILE]
+            dtag_value = None
+            if rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG] != 0:
+                dtag_value = schc_frag.dtag
             w_value = schc_frag.win
-            dtag_value = schc_frag.dtag
             fcn_value = schc_frag.fcn
-            #payload = schc_frag.payload
-            rcs = schc_frag.mic
-            #schc_frag.bitmap
             all1_b = 2**rule[T_FRAG][T_FRAG_PROF][T_FRAG_FCN]-1
             all1 = False
+            rcs = None
             if schc_frag.fcn == all1_b:
                 all1 = True
+                rcs = schc_frag.mic   
+                #print("rcs=", rcs)  
+                payload = schc_frag.payload
+            #schc_frag.bitmap
             abort = schc_frag.abort
             ack = schc_frag.ack
             ack_request = schc_frag.ack_request
@@ -380,7 +552,7 @@ class SCHCParser:
                 payload_len = len(schc_pkt[schc_len:])
             rcs_hexa = None
             if rcs is not None:
-                rcs_hexa = binascii.hexlify(rcs).decode('ascii')
+                rcs_hexa = binascii.hexlify(rcs.to_bytes(4, 'big')).decode('ascii')
    
             x = { "RuleIDValue":ruleid_value, 
                   "RuleIDLength":ruleid_length,

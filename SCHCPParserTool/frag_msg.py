@@ -274,6 +274,7 @@ class frag_rx(frag_base):
         XXX need to be considered.
         """
         dtag_size = self.rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG]
+        #print("dtagsize", dtag_size)
         if dtag_size != 0:
             dtag = self.packet_bbuf.get_bits(dtag_size)
         else:
@@ -320,7 +321,7 @@ class frag_rx(frag_base):
         assuming that mic_size is not zero.
         '''
         mic_size = get_mic_size(self.rule)
-        self.mic = self.packet_bbuf.get_bits_as_buffer(mic_size).get_content()
+        self.mic = self.packet_bbuf.get_bits(mic_size)
         return mic_size
 
 class frag_sender_rx_all0_ack(frag_rx):
