@@ -213,7 +213,7 @@ class SCHCParser:
                 break
         return l
 
-    def tiles_missing(self, fcn = 62, w = 0):
+    def tiles_missing(self, fcn = 62, w = 0, ack_req = False):
         
         missing = []
         #print ("fcn , w ", fcn, w)
@@ -221,16 +221,18 @@ class SCHCParser:
             a = self.bitmap[idx_a]
             if idx_a == w:
                 limit = len(a)-fcn-1
-                if fcn == len(self.bitmap[0]):
+                if fcn == len(self.bitmap[0]) or ack_req:
                     limit = SCHCParser.get_lastpos(a)
             else : 
                 limit = SCHCParser.get_lastpos(a)
+            
             for idx_b, x in enumerate(a[:limit]):
                 if x == 0:
                     w = idx_a
                     missing.append(idx_b)
         
-        #print("missing",missing)
+        print("missing",missing)
+        print("fcn",fcn)
         
         if len(missing) != 0:
             return w, True
@@ -288,9 +290,9 @@ class SCHCParser:
 
         # Initialize values to create ACK later
         self.tiles_all1 = True
-        c = 1
         rcs_check = True
-
+        c = 1
+        
         # Create a new bitmap and tiles vectors if not done already
         if self.bitmap is None:
             self.bitmap = [SCHCParser.get_void_bitmap(self)]
@@ -308,6 +310,7 @@ class SCHCParser:
         fcn = schc_frag['Fragmentation']['FCNValue']
         nb_tiles = schc_frag['Fragmentation']['FragmentPayloadLength']//schc_frag['Fragmentation']['TileLength']
         frag_payload = schc_frag['Fragmentation']['FragmentPayload']
+        ack_req = schc_frag['Fragmentation']["ack_req"]
 
         SCHCParser.get_bitmap(self, bitmap = self.bitmap, 
                                     tiles = self.tiles,
@@ -316,7 +319,7 @@ class SCHCParser:
                                     frags = None, w = w_value, 
                                     fcn = fcn, 
                                     nb_tiles = nb_tiles)
-        # print(self.bitmap)
+        print(self.bitmap)
 
         # Save the all1 for later if needed
         if fcn == len(self.bitmap[0]):
@@ -325,8 +328,8 @@ class SCHCParser:
             self.all1_fragment = fragment
 
         # Check for missing tiles
-        w_miss, tiles_missing = SCHCParser.tiles_missing(self, fcn=fcn, w = w_value)
-
+        w_miss, tiles_missing = SCHCParser.tiles_missing(self, fcn=fcn, w = w_value, ack_req = ack_req)
+        print("w_miss, tiles_missing", w_miss, tiles_missing)
         # There is no aparent tiles missing and we receive an all1
         if tiles_missing == False and fcn == len(self.bitmap[0]):
             payload = SCHCParser.reassembly_tiles(self)
@@ -379,6 +382,27 @@ class SCHCParser:
                 tiles_missing = tiles_missing)
             return ack
 
+        if ack_req == True and tiles_missing == False and rcs_check == False:
+            # Put the c bit to 0 indicating that there are missing tiles  
+
+            print("here bitmap", self.bitmap)
+            c = 0
+            ack = SCHCParser.generate_schc_ack (
+                self = self,
+                ruleid_value = ruleid_value, 
+                ruleid_length = ruleid_length, 
+                dtag_value = dtag_value, 
+                dtag_length = dtag_length, 
+                w_length = w_length,
+                w_value = w_miss, 
+                c = c, 
+                rcs_check = rcs_check,
+                tiles_missing = tiles_missing,
+                ack_req = ack_req)
+
+            print ('ack', ack)
+            return ack
+
         # The all1 has been already received and we receive another packet after, we re-inject the all1:
         if self.all1_received and fcn != len(self.bitmap[0]):
             frag = self.all1_fragment
@@ -396,7 +420,8 @@ class SCHCParser:
                           w_value = None, c = 1 , 
                           rcs_check = True,
                           tiles_missing = False,
-                          payload = ""):
+                          payload = "",
+                          ack_req = False):
         ack = ""
         bitmap_str = ""
         padding = None
@@ -423,6 +448,13 @@ class SCHCParser:
                                          fcn = fcn, 
                                          w = w_value, 
                                          bad_rcs = True, 
+                                         tiles_missing = True)
+        if ack_req:
+            bitmap_str, padding, ack = SCHCParser.get_ack_hex(bitmap = self.bitmap,
+                                         wc = wc,
+                                         fcn = fcn, 
+                                         w = w_value, 
+                                         bad_rcs = rcs_check, 
                                          tiles_missing = True)
 
         ack_hexa = str(binascii.hexlify(ack))
