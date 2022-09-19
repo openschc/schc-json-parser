@@ -27,10 +27,6 @@ last_all1_only = binascii.unhexlify("147f4a2b0a9c")
 
 sender_abort = binascii.unhexlify("14ff")
 
-schc_abort_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=sender_abort)
-print("schc_abort_parsed", schc_abort_parsed)
-
-
 schc_parsed_01 = SCHCParser.parse_schc_msg(parser, schc_pkt=first_frag)
 print(schc_parsed_01)
 schc_parsed_02 = SCHCParser.parse_schc_msg(parser, schc_pkt=second_frag)
@@ -50,14 +46,20 @@ schc_parsed_all1_only = SCHCParser.parse_schc_msg(parser, schc_pkt=last_all1_onl
 
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_01, tiles_all1 = False)
 
-#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_02, tiles_all1 = False)
-#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_03, tiles_all1 = False)
-#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_07, tiles_all1 = False)
+ack = SCHCParser.reassembly(parser, fragment = schc_parsed_02, tiles_all1 = False)
+ack = SCHCParser.reassembly(parser, fragment = schc_parsed_03, tiles_all1 = False)
+ack = SCHCParser.reassembly(parser, fragment = schc_parsed_07, tiles_all1 = False)
 #print("here  ",ack)
-#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_06, tiles_all1 = False)
-#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_05, tiles_all1 = False)
-#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_04, tiles_all1 = False)
+ack = SCHCParser.reassembly(parser, fragment = schc_parsed_06, tiles_all1 = False)
+ack = SCHCParser.reassembly(parser, fragment = schc_parsed_05, tiles_all1 = False)
+ack = SCHCParser.reassembly(parser, fragment = schc_parsed_04, tiles_all1 = False)
 #print("here", ack)
+
+#We dont send the ACK and we wait for the abort, we should receve this:
+
+schc_abort_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=sender_abort)
+print("schc_abort_parsed", schc_abort_parsed) # Note that "abort": true
+
 #ack = SCHCParser.reassembly(parser, fragment = schc_parsed_all1_only, tiles_all1 = False)
 #print("here", ack)
 
