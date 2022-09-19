@@ -22,9 +22,14 @@ sixth_frag = binascii.unhexlify("14070000000000000000000000000000000000000000000
 seventh_frag_tiles = binascii.unhexlify("147b000000000000000000000000000000000000000000000000000000000000000000000000000000")
 last_all1_only = binascii.unhexlify("147f4a2b0a9c")
 
+# Let's create a receiver abort message
+rule_id = 20 # AoE -- downlink packet 
+JSON_Hint = {"RuleIDValue": rule_id, 
+             "Direction": "DW"}
+
 
 schc_parsed_01 = SCHCParser.parse_schc_msg(parser, schc_pkt=first_frag)
-#print(schc_parsed_01)
+print(schc_parsed_01)
 schc_parsed_02 = SCHCParser.parse_schc_msg(parser, schc_pkt=second_frag)
 #print(schc_parsed_02)
 schc_parsed_03 = SCHCParser.parse_schc_msg(parser, schc_pkt=third_frag)
@@ -40,25 +45,24 @@ schc_parsed_07 = SCHCParser.parse_schc_msg(parser, schc_pkt=seventh_frag_tiles)
 schc_parsed_all1_only = SCHCParser.parse_schc_msg(parser, schc_pkt=last_all1_only)
 #print(schc_parsed_all1_only)
 
-ack_req = binascii.unhexlify("1400") # Requesting RuleID = 20, w = 00 
-ack_req = binascii.unhexlify("1440") # Requesting RuleID = 20, w = 01 
-ack_req_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=ack_req)
-print(ack_req_parsed)
-
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_01, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = schc_parsed_02, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = schc_parsed_03, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = schc_parsed_04, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = schc_parsed_05, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = schc_parsed_06, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = schc_parsed_07, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = ack_req_parsed, tiles_all1 = False)
-print("ack_req before sending all1", ack)
-#ack = SCHCParser.reassembly(parser, fragment = ack_req_parsed, tiles_all1 = False)
-ack = SCHCParser.reassembly(parser, fragment = schc_parsed_all1_only, tiles_all1 = False)
 
-print(ack)
-# Add case for W = 01 and all1 true for ack request
+# Don't send the last and send the receiver - abort
+
+schc_ra = SCHCParser.generate_schc_msg(parser, hint = JSON_Hint)
+print("schc receiver abort", schc_ra)
+
+#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_02, tiles_all1 = False)
+#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_03, tiles_all1 = False)
+#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_07, tiles_all1 = False)
+#print("here  ",ack)
+#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_06, tiles_all1 = False)
+#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_05, tiles_all1 = False)
+#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_04, tiles_all1 = False)
+#print("here", ack)
+#ack = SCHCParser.reassembly(parser, fragment = schc_parsed_all1_only, tiles_all1 = False)
+#print("here", ack)
+
 
 #fullpkt = binascii.unhexlify("1660000000029211fffe80000000000000a06e66666470e5a1fe8000000000000000000000000000015c403070029220300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
 #print("deux", bitmap)

@@ -231,8 +231,8 @@ class SCHCParser:
                     w = idx_a
                     missing.append(idx_b)
         
-        print("missing",missing)
-        print("fcn",fcn)
+        #print("missing",missing)
+        #print("fcn",fcn)
         
         if len(missing) != 0:
             return w, True
@@ -319,7 +319,7 @@ class SCHCParser:
                                     frags = None, w = w_value, 
                                     fcn = fcn, 
                                     nb_tiles = nb_tiles)
-        print(self.bitmap)
+        #print(self.bitmap)
 
         # Save the all1 for later if needed
         if fcn == len(self.bitmap[0]):
@@ -329,7 +329,7 @@ class SCHCParser:
 
         # Check for missing tiles
         w_miss, tiles_missing = SCHCParser.tiles_missing(self, fcn=fcn, w = w_value, ack_req = ack_req)
-        print("w_miss, tiles_missing", w_miss, tiles_missing)
+        #print("w_miss, tiles_missing", w_miss, tiles_missing)
         # There is no aparent tiles missing and we receive an all1
         if tiles_missing == False and fcn == len(self.bitmap[0]):
             payload = SCHCParser.reassembly_tiles(self)
@@ -552,19 +552,27 @@ class SCHCParser:
         self.bitmap = a
         self.tiles = b
 
-    def parse_schc_msg(self, schc_pkt, ruleID = None):
+    def parse_schc_msg(self, schc_pkt, ruleID = None, dir = None):
 
         #if ruleID then add 8 bits at first before BitBuffer
         if ruleID is not None:
             ruleID = ruleID.to_bytes(1, 'big')
             schc_pkt = ruleID + schc_pkt
-
-        deviid = self.iid
-        chk_sum = None
+        if dir == None : 
+            dir = T_DIR_UP
 
         schc_bbuf = BitBuffer(schc_pkt)
+        deviid = self.iid
+        chk_sum = None
+        sender_abort = ""
+        payload_len = ""
+        rcs_hexa = ""
+        all1 = False
+        ack_request = False
+
         rule = self.rm.FindRuleFromSCHCpacket(schc=schc_bbuf, device=self.device_id)
 
+        dprint("schc_bbuf", schc_bbuf.display)
         if rule == None:
             print("rule not found")
             return None
@@ -573,7 +581,6 @@ class SCHCParser:
         ruleid_length = rule[T_RULEIDLENGTH]
 
         if T_FRAG in rule:
-            schc_frag = FM.frag_receiver_rx(rule, schc_bbuf)
             mode = rule[T_FRAG][T_FRAG_MODE]
             dtag_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG]
             fcn_length = None
@@ -585,35 +592,47 @@ class SCHCParser:
             if T_FRAG_TILE in rule[T_FRAG][T_FRAG_PROF]:
                 tile_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_TILE]
             dtag_value = None
-            if rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG] != 0:
-                dtag_value = schc_frag.dtag
-            w_value = schc_frag.win
-            fcn_value = schc_frag.fcn
-            all1_b = 2**rule[T_FRAG][T_FRAG_PROF][T_FRAG_FCN]-1
-            all1 = False
-            rcs = None
-            if schc_frag.fcn == all1_b:
-                all1 = True
-                rcs = schc_frag.mic   
-                #print("rcs=", rcs)  
+            if dir == T_DIR_UP:
+                schc_frag = FM.frag_receiver_rx(rule, schc_bbuf)
+                if rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG] != 0:
+                    dtag_value = schc_frag.dtag
+                w_value = schc_frag.win
+                fcn_value = schc_frag.fcn
+                all1_b = 2**rule[T_FRAG][T_FRAG_PROF][T_FRAG_FCN]-1
+                all1 = False
+                rcs = None
+                if schc_frag.fcn == all1_b:
+                    all1 = True
+                    rcs = schc_frag.mic   
+                    #print("rcs=", rcs)  
                 payload = schc_frag.payload
-            #schc_frag.bitmap
-            abort = schc_frag.abort
-            ack = schc_frag.ack
-            ack_request = schc_frag.ack_request
-            #schc_frag.cbit
-            #schc_frag.packet
-            schc_len = SCHCParser.bytes_needed(ruleid_length + w_length + fcn_length)
-            payload = binascii.hexlify(schc_pkt[schc_len:]).decode('ascii')
-            abort = schc_frag.abort
-            payload_hexa = None
-            if payload is not None:
-                payload_hexa = payload
-                payload_len = len(schc_pkt[schc_len:])
-            rcs_hexa = None
-            if rcs is not None:
-                rcs_hexa = binascii.hexlify(rcs.to_bytes(4, 'big')).decode('ascii')
-   
+                    #schc_frag.bitmap
+                abort = schc_frag.abort
+                ack = schc_frag.ack
+                ack_request = schc_frag.ack_request
+                    #schc_frag.cbit
+                    #schc_frag.packet
+                schc_len = SCHCParser.bytes_needed(ruleid_length + w_length + fcn_length)
+                payload = binascii.hexlify(schc_pkt[schc_len:]).decode('ascii')
+                abort = schc_frag.abort
+                payload_hexa = None
+                if payload is not None:
+                    payload_hexa = payload
+                    payload_len = len(schc_pkt[schc_len:])
+                rcs_hexa = None
+                if rcs is not None:
+                    rcs_hexa = binascii.hexlify(rcs.to_bytes(4, 'big')).decode('ascii')
+            else:
+                w_value = None
+                dtag_value = None
+                fcn_value = None
+                payload_hexa = None
+                AllOne = False
+                abort = True
+                ack = False
+                ack_req = False
+                sender_abort = binascii.hexlify(schc_pkt[1:]).decode('ascii')
+
             x = { "RuleIDValue":ruleid_value, 
                   "RuleIDLength":ruleid_length,
                   "Fragmentation":{
@@ -632,6 +651,7 @@ class SCHCParser:
                     "abort":abort,
                     "ack":ack,
                     "ack_req":ack_request,
+                    "sender_abort_hexa":sender_abort,
                 }
             }
 
@@ -837,40 +857,57 @@ class SCHCParser:
 
         return y
 
-    def generate_schc_msg(self, packet, hint = {"RuleIDValue": 101}):
+    def generate_schc_msg(self, packet = None, hint = {"RuleIDValue": 101}):
         # packet -> IPv6/UDP in bytes
         # hint -> JSON format
 
         t_dir = T_DIR_UP
         t_dir = hint["Direction"]
+        rule_id = hint["RuleIDValue"]
         parser = Parser(self)
-        comp = Compressor(self)
 
+        json = {}
+        schc_packet = bytearray()
+
+        print("packet", packet)
         # We parse the packet
-        parsed_packet, residue, parsing_error = parser.parse(packet, t_dir, layers=["IPv6", "UDP"])
 
-        # We search for a rule that matches the packet:
+        if packet is not None:
+            comp = Compressor(self)
+            parsed_packet, residue, parsing_error = parser.parse(packet, t_dir, layers=["IPv6", "UDP"])
+            
+            # We search for a rule that matches the packet:
 
-        rule, self.device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
-        if rule == None:
-            print("Rule does not match packet")
-            return None, None
-
-        ruleid_value = rule[T_RULEID]
-
-        if ruleid_value == hint["RuleIDValue"]:
-            if T_COMP in rule:
-                # Apply compression rule
-                schc_packet = comp.compress(rule, parsed_packet, residue, t_dir)
-                json = self.parse_schc_msg(schc_packet._content)
-            if T_FRAG in rule:
-                # To be done
+            rule, self.device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
+            if rule == None:
+                print("Rule does not match packet")
                 return None, None
+
+            ruleid_value = rule[T_RULEID]
+
+            if ruleid_value == hint["RuleIDValue"]:
+                if T_COMP in rule:
+                    # Apply compression rule
+                    schc_packet_comp = comp.compress(rule, parsed_packet, residue, t_dir)
+                    json = self.parse_schc_msg(schc_packet_comp._content)
+                    schc_packet = schc_packet_comp._content
+            else:
+                print("Rule in packet does not match hint")
+                return None, None
+            dprint (schc_packet)
         else:
-            print("Rule in packet does not match hint")
-            return None, None
-        dprint (schc_packet._content)
-        return json, schc_packet._content
+        
+            rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=rule_id)
+
+            if T_FRAG in rule:
+                if rule['Fragmentation']['FRMode'] == 'AckOnError':
+                    if t_dir == T_DIR_DW: # Create Receiver Abort
+                        receiver_abort = binascii.unhexlify("14ffff")
+                        json = self.parse_schc_msg(schc_pkt = receiver_abort, dir = t_dir)
+                        print("ACK ON ERROR - Receiver Abort")
+                    return json, receiver_abort
+
+        return  json, schc_packet
 
     def generate_schc_comp(self, RuleID, dev_prefix, app_prefix):
 
