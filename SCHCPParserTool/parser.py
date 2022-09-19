@@ -564,7 +564,7 @@ class SCHCParser:
         schc_bbuf = BitBuffer(schc_pkt)
         deviid = self.iid
         chk_sum = None
-        sender_abort = ""
+        recever_abort = ""
         payload_len = ""
         rcs_hexa = ""
         all1 = False
@@ -631,7 +631,7 @@ class SCHCParser:
                 abort = True
                 ack = False
                 ack_req = False
-                sender_abort = binascii.hexlify(schc_pkt[1:]).decode('ascii')
+                recever_abort = binascii.hexlify(schc_pkt[1:]).decode('ascii')
 
             x = { "RuleIDValue":ruleid_value, 
                   "RuleIDLength":ruleid_length,
@@ -651,7 +651,7 @@ class SCHCParser:
                     "abort":abort,
                     "ack":ack,
                     "ack_req":ack_request,
-                    "sender_abort_hexa":sender_abort,
+                    "recever_abort_hexa":recever_abort,
                 }
             }
 
