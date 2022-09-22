@@ -642,7 +642,6 @@ class SCHCParser:
                 bytes_as_bits = ''.join(format(byte, '08b') for byte in schc_pkt[1:])
                 w_value = bytes_as_bits[1]
                 c_value = bytes_as_bits[2]
-                print("aaaa", bytes_as_bits)
                 ack = True # TODO
                 fcn_value = None
                 payload_hexa = None
@@ -899,7 +898,7 @@ class SCHCParser:
 
         return y
 
-    def generate_schc_msg(self, packet = None, hint = {"RuleIDValue": 101}):
+    def generate_schc_msg(self, packet = None, hint = {"RuleIDValue": 101}, padding = None):
         # packet -> IPv6/UDP in bytes
         # hint -> JSON format
 
@@ -950,27 +949,39 @@ class SCHCParser:
                         print("ACK ON ERROR - Receiver Abort")
                     return json, receiver_abort
                 if rule['Fragmentation']['FRMode'] == 'AckAlways':
-                    fragments, rcs, json = SCHCParser.fragment_ack_always(self, packet, hint['MTU'], rule_id)
+                    fragments, rcs, json = SCHCParser.fragment_ack_always(self, packet, hint['MTU'], rule_id, padding = padding)
                     schc_packet = fragments
 
 
         return  json, schc_packet
 
-    def fragment_ack_always(self, packet, mtu, rule_id):
+    def fragment_ack_always(self, packet, mtu, rule_id, padding = None):
 
         # list where the final fragments in bytearray will be sotred and returned to generate_schc_message ()
+        padding_comp = padding
         fragments = [None] * (len(packet) // mtu)
         packet_len = len(packet)
         
-
+        dprint ('padding at compression', padding)
         dprint("type", type(packet))
         dprint("packet to be fragmented", packet, "packet len", len(packet), mtu)
         
         # We convert the packet in bits
         bytes_as_bits = ''.join(format(byte, '08b') for byte in packet)
+   
+        if padding_comp != 0:
+            len_diff = len(bytes_as_bits) - len(padding_comp)
+            bytes_as_bits = bytes_as_bits[:len_diff]
 
-        # We create the headers
-        wfcn = ['00','10','01']
+        dprint ("len_bits", len(bytes_as_bits))
+
+        # We create the headers TODO better
+        wfcn = []
+        if len(fragments) == 3:
+            wfcn = ['00','10','01']
+        else:
+            wfcn = ['00','11']
+
         #wfcn = ['AA','BB','CC']
 
         # pas corresponds to the length of the fragments in bits minus the headers
@@ -983,6 +994,9 @@ class SCHCParser:
         fragments =  [wfcn[i] + bValues[i] for i in range(0, len(bValues))]
 
         payload_bin = [bytes_as_bits[i:i+pas] for i in range(0, len(bytes_as_bits), pas)]
+
+        dprint("payload_bin", len(payload_bin[0]), len(payload_bin[1]), payload_bin)
+
         # we put the information of fragments inside the variable fragments, we add padding to the last one if needed
         for idx, fragment in enumerate(fragments):
             bValues[idx] = [fragment[i:i+8] for i in range(0, len(fragment), 8)]
@@ -991,7 +1005,8 @@ class SCHCParser:
                 bValues[idx][-1] = bValues[idx][-1] + padding
                 fragments[-1] = fragments[-1] + padding
 
-        #print("len_last", len(fragments[-1]) / 8)
+        dprint("len_last", len(fragments[-1]) / 8)
+        
 
         # We create a variable including the total length of the packet plus the padding
         full_pkt = bytes_as_bits + padding
@@ -1035,7 +1050,8 @@ class SCHCParser:
             fragments_hexa.append(local_hexa)
             local_hexa = bytearray()
 
-        dprint("lens", len(fragments_hexa[0]), len(fragments_hexa[1]), len(fragments_hexa[2]))
+        for idx, _ in enumerate(fragments_hexa):
+            dprint("len of frag = ", idx, len(fragments_hexa[idx]))
 
         # we pars the fragments
        
