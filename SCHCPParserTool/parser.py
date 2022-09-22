@@ -1,3 +1,4 @@
+from numpy import pad
 import SCHCPParserTool
 from SCHCPParserTool.compr_core import * 
 from SCHCPParserTool.compr_parser import * 
@@ -552,7 +553,7 @@ class SCHCParser:
         self.bitmap = a
         self.tiles = b
 
-    def parse_schc_msg(self, schc_pkt, ruleID = None, dir = None):
+    def parse_schc_msg(self, schc_pkt, ruleID = None, dir = None, payload_aa = "", rcs_aa=""):
 
         #if ruleID then add 8 bits at first before BitBuffer
         if ruleID is not None:
@@ -623,17 +624,41 @@ class SCHCParser:
                 if rcs is not None:
                     rcs_hexa = binascii.hexlify(rcs.to_bytes(4, 'big')).decode('ascii')
             else:
-                w_value = None
-                dtag_value = None
-                fcn_value = None
-                payload_hexa = None
-                AllOne = False
-                abort = True
-                ack = False
-                ack_req = False
-                recever_abort = binascii.hexlify(schc_pkt[1:]).decode('ascii')
+                if mode == "AckOnError":
+                    w_value = None
+                    dtag_value = None
+                    fcn_value = None
+                    payload_hexa = None
+                    AllOne = False
+                    abort = True
+                    ack = False
+                    ack_req = False
+                    recever_abort = binascii.hexlify(schc_pkt[1:]).decode('ascii')
+                if mode == "AckAlways":
+                    fcn_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_FCN]
+                    w_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_W]
+                    schc_frag = FM.frag_receiver_rx(rule, schc_bbuf)
+                    tile_length = None
+                    w_value = schc_frag.win
+                    if rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG] != 0:
+                        dtag_value = schc_frag.dtag
+                    fcn_value = schc_frag.fcn
 
-            x = { "RuleIDValue":ruleid_value, 
+                    payload_hexa = payload_aa
+                    payload_len = len(payload_aa)
+                    rcs_hexa = binascii.hexlify(rcs_aa.to_bytes(4, 'big')).decode('ascii') 
+                    all1 = False
+                    if fcn_value == 1:
+                        all1 = True
+                    abort = False
+                    ack = False
+                    ack_request = False
+                    recever_abort = False
+
+                    #print('w_value', w_value)
+
+            x = { "FragmentHexa": binascii.hexlify(schc_pkt[1:]).decode('ascii'),
+                  "RuleIDValue":ruleid_value, 
                   "RuleIDLength":ruleid_length,
                   "Fragmentation":{
                     "mode": mode,
@@ -715,7 +740,6 @@ class SCHCParser:
                         comp.update({YANG_ID[e[T_FID]][1]: dport})
                     else:
                         pass
-
 
                 for i, key in enumerate(keys):
                     try:
@@ -869,16 +893,19 @@ class SCHCParser:
         json = {}
         schc_packet = bytearray()
 
-        print("packet", packet)
+        rule = self.rm.FindRuleFromRuleID (device = self.device_id, ruleID = rule_id )
+        dprint("Rule", rule)
         # We parse the packet
 
-        if packet is not None:
+        if packet != None and T_COMP in rule:
+
             comp = Compressor(self)
             parsed_packet, residue, parsing_error = parser.parse(packet, t_dir, layers=["IPv6", "UDP"])
             
             # We search for a rule that matches the packet:
 
             rule, self.device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
+            dprint("rule",rule)
             if rule == None:
                 print("Rule does not match packet")
                 return None, None
@@ -886,11 +913,9 @@ class SCHCParser:
             ruleid_value = rule[T_RULEID]
 
             if ruleid_value == hint["RuleIDValue"]:
-                if T_COMP in rule:
-                    # Apply compression rule
-                    schc_packet_comp = comp.compress(rule, parsed_packet, residue, t_dir)
-                    json = self.parse_schc_msg(schc_packet_comp._content)
-                    schc_packet = schc_packet_comp._content
+                schc_packet_comp = comp.compress(rule, parsed_packet, residue, t_dir)
+                json = self.parse_schc_msg(schc_packet_comp._content)
+                schc_packet = schc_packet_comp._content
             else:
                 print("Rule in packet does not match hint")
                 return None, None
@@ -906,12 +931,108 @@ class SCHCParser:
                         json = self.parse_schc_msg(schc_pkt = receiver_abort, dir = t_dir)
                         print("ACK ON ERROR - Receiver Abort")
                     return json, receiver_abort
+                if rule['Fragmentation']['FRMode'] == 'AckAlways':
+                    fragments, rcs, json = SCHCParser.fragment_ack_always(self, packet, hint['MTU'], rule_id)
+                    schc_packet = fragments
+
 
         return  json, schc_packet
 
+    def fragment_ack_always(self, packet, mtu, rule_id):
+
+        # list where the final fragments in bytearray will be sotred and returned to generate_schc_message ()
+        fragments = [None] * (len(packet) // mtu)
+        packet_len = len(packet)
+        
+
+        dprint("type", type(packet))
+        dprint("packet to be fragmented", packet, "packet len", len(packet), mtu)
+        
+        # We convert the packet in bits
+        bytes_as_bits = ''.join(format(byte, '08b') for byte in packet)
+
+        # We create the headers
+        wfcn = ['00','10','01']
+        #wfcn = ['AA','BB','CC']
+
+        # pas corresponds to the length of the fragments in bits minus the headers
+        pas = mtu * 8 - 2
+
+        dprint ("pas", pas)
+        dprint ("bytes_as_bits", len(bytes_as_bits))
+
+        bValues = [bytes_as_bits[i:i+pas] for i in range(0, len(bytes_as_bits), pas)]
+        fragments =  [wfcn[i] + bValues[i] for i in range(0, len(bValues))]
+
+        payload_bin = [bytes_as_bits[i:i+pas] for i in range(0, len(bytes_as_bits), pas)]
+        # we put the information of fragments inside the variable fragments, we add padding to the last one if needed
+        for idx, fragment in enumerate(fragments):
+            bValues[idx] = [fragment[i:i+8] for i in range(0, len(fragment), 8)]
+            if len(bValues[idx][-1]) != 8 : 
+                padding = format(0, "0" + str(8 - len(bValues[idx][-1])) + "b") # padding_len
+                bValues[idx][-1] = bValues[idx][-1] + padding
+                fragments[-1] = fragments[-1] + padding
+
+        #print("len_last", len(fragments[-1]) / 8)
+
+        # We create a variable including the total length of the packet plus the padding
+        full_pkt = bytes_as_bits + padding
+
+        # Add padding to padding if necessary for computing RCS
+        padding_len = len(full_pkt) % 8
+
+        if padding_len != 0 : 
+            padding_a = format(0, "0" + str(padding_len) + "b") # padding_len
+            full_pkt = bytes_as_bits + padding_a
+
+        # Convert to hexa
+        bValues_full = [full_pkt[i:i+8] for i in range(0, len(full_pkt), 8)]
+        full_pkt_array = bytearray()
+        for bValue in bValues_full:
+                #print ("bValue",bValue)
+                local_bytearray = int(bValue, 2).to_bytes((len(bValue) + 7) // 8, byteorder='big')
+                full_pkt_array += local_bytearray
+
+        rcs_pay = binascii.crc32(full_pkt_array)
+        #rcs_pay_hexa = rcs_pay.to_bytes(4, 'big')
+
+        rcs_pay_bits = format(rcs_pay, "032b")
+
+        # We put the RCS after the header:
+
+        fragments[-1] = fragments[-1][:2] + rcs_pay_bits + fragments[-1][2:]
+        #print("last fragment", fragments[-1], len(fragments[-1]))
+
+        # separate the packets into fragments:
+
+        for idx, fragment in enumerate(fragments):
+            bValues[idx] = [fragment[i:i+8] for i in range(0, len(fragment), 8)]
+
+        fragments_hexa = []
+        local_hexa = bytearray()
+        for idx, bValues in enumerate(bValues):
+            for bValue in bValues:
+                local_bytearray = int(bValue, 2).to_bytes((len(bValue) + 7) // 8, byteorder='big')
+                local_hexa += local_bytearray
+            fragments_hexa.append(local_hexa)
+            local_hexa = bytearray()
+
+        dprint("lens", len(fragments_hexa[0]), len(fragments_hexa[1]), len(fragments_hexa[2]))
+
+        # we pars the fragments
+       
+        rule_id_bytes = rule_id.to_bytes(1, byteorder='big')
+        json = []
+        for idx, frag in enumerate (fragments_hexa):
+            json.append(self.parse_schc_msg(rule_id_bytes + frag, 
+                                       dir = T_DIR_DW, 
+                                       rcs_aa = rcs_pay, 
+                                       payload_aa = payload_bin[idx]))
+        return fragments_hexa, rcs_pay, json
+        
     def generate_schc_comp(self, RuleID, dev_prefix, app_prefix):
 
-        rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=RuleID)
+        rule = self.rm.FindRuleFromRuleID(device = self.device_id, ruleID=RuleID)
 
         if rule == None:
             print("RuleID not valid")

@@ -107,15 +107,15 @@
            }
     }
     },{	
-       "RuleID" : 30,
+       "RuleID" : 21,
        "RuleIDLength" : 8,
        "Fragmentation" : {
        "FRMode": "AckAlways",
        "FRDirection": "DW",
        "FRModeProfile": {
            "dtagSize": 0,
-           "WSize": 2,
-           "FCNSize": 6,
+           "WSize": 1,
+           "FCNSize": 1,
            "ackBehavior": "afterAll1",
            "tileSize": 10,
            "MICAlgorithm": "crc32",
