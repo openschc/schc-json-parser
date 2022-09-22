@@ -1,3 +1,4 @@
+from SCHCPParserTool.compr_core import T_DIR_UP
 from SCHCPParserTool.parser import SCHCParser
 import binascii
 
@@ -35,9 +36,29 @@ JSON_Hint = {"RuleIDValue": rule_id,
 json, fragments = SCHCParser.generate_schc_msg(parser, packet = no_compress_pkt ,hint = JSON_Hint)
 #print(fragments)
 
-ACK_OK00 = binascii.hexlify('20')  # 00100000 ACK ok for first packet  
-ACK_OK01 = binascii.hexlify('a0')  # 10100000 ACK ok for second packet  
-ACK_OK01 = binascii.hexlify('40')  # 01000000 ACK ok for last packet  
+ACK_OK_1 = binascii.unhexlify('1520')  # 00100000 ACK ok for first packet  15 in Fport
+ACK_OK_2 = binascii.unhexlify('15a0')  # 10100000 ACK ok for second packet  
+ACK_OK_3 = binascii.unhexlify('1540')  # 01000000 ACK ok for last packet  
 
-# Now we generate the ACK 
-#.generate_schc_msg(parser, hint = JSON_Hint)
+ack_ok_1_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=ACK_OK_1, dir= T_DIR_UP)
+print(ack_ok_1_parsed)
+
+ack_ok_2_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=ACK_OK_2, dir= T_DIR_UP)
+print(ack_ok_2_parsed)
+
+ack_ok_3_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=ACK_OK_3, dir= T_DIR_UP)
+print(ack_ok_3_parsed)
+
+
+# For test 15, receiver abort:
+
+REC_ABORT = binascii.unhexlify('15FFFF')  #  1111111111111111 ACK ok for first packet  15 in Fport
+
+rec_abort_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=REC_ABORT, dir= T_DIR_UP)
+print(rec_abort_parsed)
+
+# For test 16, ACK Request:
+
+ACK_REQ = binascii.unhexlify('1580') # 10000000 ACK Request for w=1, Rule id 15 in fport
+
+

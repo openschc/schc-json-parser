@@ -553,7 +553,7 @@ class SCHCParser:
         self.bitmap = a
         self.tiles = b
 
-    def parse_schc_msg(self, schc_pkt, ruleID = None, dir = None, payload_aa = "", rcs_aa=""):
+    def parse_schc_msg(self, schc_pkt, ruleID = None, dir = None, payload_aa = "", rcs_aa=0):
 
         #if ruleID then add 8 bits at first before BitBuffer
         if ruleID is not None:
@@ -570,6 +570,7 @@ class SCHCParser:
         rcs_hexa = ""
         all1 = False
         ack_request = False
+        c_value = ''
 
         rule = self.rm.FindRuleFromSCHCpacket(schc=schc_bbuf, device=self.device_id)
 
@@ -593,7 +594,8 @@ class SCHCParser:
             if T_FRAG_TILE in rule[T_FRAG][T_FRAG_PROF]:
                 tile_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_TILE]
             dtag_value = None
-            if dir == T_DIR_UP:
+
+            if dir == T_DIR_UP and mode == "AckOnError":
                 schc_frag = FM.frag_receiver_rx(rule, schc_bbuf)
                 if rule[T_FRAG][T_FRAG_PROF][T_FRAG_DTAG] != 0:
                     dtag_value = schc_frag.dtag
@@ -623,18 +625,33 @@ class SCHCParser:
                 rcs_hexa = None
                 if rcs is not None:
                     rcs_hexa = binascii.hexlify(rcs.to_bytes(4, 'big')).decode('ascii')
-            else:
-                if mode == "AckOnError":
-                    w_value = None
-                    dtag_value = None
-                    fcn_value = None
-                    payload_hexa = None
-                    AllOne = False
-                    abort = True
+
+            if dir == T_DIR_DW and mode == "AckOnError": #  abort
+                w_value = None
+                dtag_value = None
+                fcn_value = None
+                payload_hexa = None
+                AllOne = False
+                abort = True
+                ack = False
+                ack_req = False
+                recever_abort = binascii.hexlify(schc_pkt[1:]).decode('ascii')
+
+            if dir == T_DIR_UP and mode == "AckAlways": # ACK or abort:
+                
+                bytes_as_bits = ''.join(format(byte, '08b') for byte in schc_pkt[1:])
+                w_value = bytes_as_bits[1]
+                c_value = bytes_as_bits[2]
+                print("aaaa", bytes_as_bits)
+                ack = True # TODO
+                fcn_value = None
+                payload_hexa = None
+                abort = False # TODO
+                if len(bytes_as_bits) == 16:
+                    abort = True # TODO
                     ack = False
-                    ack_req = False
-                    recever_abort = binascii.hexlify(schc_pkt[1:]).decode('ascii')
-                if mode == "AckAlways":
+
+            if dir == T_DIR_DW and mode == "AckAlways":
                     fcn_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_FCN]
                     w_length = rule[T_FRAG][T_FRAG_PROF][T_FRAG_W]
                     schc_frag = FM.frag_receiver_rx(rule, schc_bbuf)
@@ -667,6 +684,7 @@ class SCHCParser:
                     "FCNLength":fcn_length,
                     "TileLength":tile_length,
                     "WValue":w_value,
+                    "CValue":c_value,
                     "DTagValue":dtag_value,
                     "FCNValue":fcn_value,
                     "FragmentPayload":payload_hexa,
