@@ -955,20 +955,23 @@ class SCHCParser:
 
         return  json, schc_packet
 
-    def fragment_ack_always(self, packet, mtu, rule_id, padding = None):
+    def fragment_ack_always(self, packet, mtu, rule_id, padding = ""):
 
         # list where the final fragments in bytearray will be sotred and returned to generate_schc_message ()
         padding_comp = padding
-        fragments = [None] * (len(packet) // mtu)
+        fragments = [None] * (math.ceil(len(packet) / mtu))
         packet_len = len(packet)
         
         dprint ('padding at compression', padding)
         dprint("type", type(packet))
         dprint("packet to be fragmented", packet, "packet len", len(packet), mtu)
-        
+        dprint('number of fragments', len(fragments))
+
         # We convert the packet in bits
         bytes_as_bits = ''.join(format(byte, '08b') for byte in packet)
-   
+
+        dprint('padding',padding)
+        dprint ("padding_comp", padding_comp)
         if padding_comp != 0:
             len_diff = len(bytes_as_bits) - len(padding_comp)
             bytes_as_bits = bytes_as_bits[:len_diff]
@@ -977,6 +980,7 @@ class SCHCParser:
 
         # We create the headers TODO better
         wfcn = []
+        print ("len(fragments)", len(fragments))
         if len(fragments) == 3:
             wfcn = ['00','10','01']
         else:

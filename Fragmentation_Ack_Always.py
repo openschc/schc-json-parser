@@ -33,8 +33,9 @@ JSON_Hint = {"RuleIDValue": rule_id,
 
 # We generate the fragments to be sent, the parser is on json with all the values per fragment including RCS
 
-json, fragments = SCHCParser.generate_schc_msg(parser, packet = no_compress_pkt ,hint = JSON_Hint)
-#print(fragments)
+
+json, fragments = SCHCParser.generate_schc_msg(parser, packet = no_compress_pkt ,hint = JSON_Hint, padding = "")
+print(json)
 
 ACK_OK_1 = binascii.unhexlify('1520')  # 00100000 ACK ok for first packet  15 in Fport
 ACK_OK_2 = binascii.unhexlify('15a0')  # 10100000 ACK ok for second packet  
@@ -55,7 +56,7 @@ print(ack_ok_3_parsed)
 REC_ABORT = binascii.unhexlify('15FFFF')  #  1111111111111111 ACK ok for first packet  15 in Fport
 
 rec_abort_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=REC_ABORT, dir= T_DIR_UP)
-print(rec_abort_parsed)
+#print(rec_abort_parsed)
 
 # For test 16, ACK Request:
 
