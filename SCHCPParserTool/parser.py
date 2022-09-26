@@ -216,7 +216,8 @@ class SCHCParser:
 
     def tiles_missing(self, fcn = 62, w = 0, ack_req = False):
         
-        missing = []
+        missing = [[] for x in range(0,len(self.bitmap))] 
+        w_all = []
         #print ("fcn , w ", fcn, w)
         for idx_a, _ in enumerate(self.bitmap):
             a = self.bitmap[idx_a]
@@ -225,18 +226,27 @@ class SCHCParser:
                 if fcn == len(self.bitmap[0]) or ack_req:
                     limit = SCHCParser.get_lastpos(a)
             else : 
-                limit = SCHCParser.get_lastpos(a)
+                if len(self.bitmap) - 1 <= w:
+                    limit = len(a)
+                else:
+                    limit = SCHCParser.get_lastpos(a)
+
             
             for idx_b, x in enumerate(a[:limit]):
                 if x == 0:
                     w = idx_a
-                    missing.append(idx_b)
+                    w_all.append(idx_a)
+                    missing[w].append(idx_b)
         
-        #print("missing",missing)
-        #print("fcn",fcn)
+        dprint("min w_all", min(w_all, default=0))
+        dprint("bitmap",self.bitmap)
+        dprint("missing",missing)
+        dprint("w_all",w_all)
+
+
         
         if len(missing) != 0:
-            return w, True
+            return min(w_all, default=0), True
         else:
             return w, False
 
@@ -330,7 +340,7 @@ class SCHCParser:
 
         # Check for missing tiles
         w_miss, tiles_missing = SCHCParser.tiles_missing(self, fcn=fcn, w = w_value, ack_req = ack_req)
-        #print("w_miss, tiles_missing", w_miss, tiles_missing)
+        dprint("w_miss, tiles_missing", w_miss, tiles_missing)
         # There is no aparent tiles missing and we receive an all1
         if tiles_missing == False and fcn == len(self.bitmap[0]):
             payload = SCHCParser.reassembly_tiles(self)
@@ -385,9 +395,27 @@ class SCHCParser:
 
         if ack_req == True and tiles_missing == False and rcs_check == False:
             # Put the c bit to 0 indicating that there are missing tiles  
-
             print("here bitmap", self.bitmap)
             c = 0
+            ack = SCHCParser.generate_schc_ack (
+                self = self,
+                ruleid_value = ruleid_value, 
+                ruleid_length = ruleid_length, 
+                dtag_value = dtag_value, 
+                dtag_length = dtag_length, 
+                w_length = w_length,
+                w_value = w_miss, 
+                c = c, 
+                rcs_check = rcs_check,
+                tiles_missing = tiles_missing,
+                ack_req = ack_req)
+
+            print ('ack', ack)
+            return ack
+
+        if ack_req == True and tiles_missing == False:
+            c = 0
+            rcs_check = False
             ack = SCHCParser.generate_schc_ack (
                 self = self,
                 ruleid_value = ruleid_value, 
@@ -534,7 +562,7 @@ class SCHCParser:
 
     def fix_bitmap(self, nb_tiles = 0, w = 0) :
         #TODO verifier si w est bon avant
-        print("here?")
+        #print("here?")
         a = self.bitmap
         b = self.tiles
         tiles_in_bitmap = sum(a[w])

@@ -54,9 +54,7 @@ ack = SCHCParser.reassembly(parser, fragment = schc_parsed_06, tiles_all1 = Fals
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_07, tiles_all1 = False)
 ack = SCHCParser.reassembly(parser, fragment = ack_req_parsed, tiles_all1 = False)
 print("ack_req before sending all1", ack)
-#ack = SCHCParser.reassembly(parser, fragment = ack_req_parsed, tiles_all1 = False)
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_all1_only, tiles_all1 = False)
-
 print(ack)
 # Add case for W = 01 and all1 true for ack request
 
