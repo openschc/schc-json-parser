@@ -18,11 +18,11 @@ no_comp_rule = 22
 udp_data = bytearray(36)
 
 # Create a No compress packet to be fragmented later
-no_compress_pkt = no_comp_rule.to_bytes(1,'big') + parser.generateIPv6UDP(no_comp_rule, udp_data = udp_data)
-#print ("no_compress_pkt", no_compress_pkt, len(no_compress_pkt))
+no_compress_pkt = no_comp_rule.to_bytes(1,'big') + parser.generateIPv6UDP(no_comp_rule, udp_data = udp_data, dir = "DW")
+print ("no_compress_pkt", binascii.hexlify(no_compress_pkt), len(no_compress_pkt))
 
-no_compress_pkt_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=no_compress_pkt)
-#print(no_compress_pkt_parsed)
+no_compress_pkt_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=no_compress_pkt, dir = "DW")
+print(no_compress_pkt_parsed)
 
 # Let's create fragments with AA
 rule_id = 21 # AA Rule ID

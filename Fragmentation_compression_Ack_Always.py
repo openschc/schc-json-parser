@@ -22,7 +22,7 @@ dev_prefix = "fe80::"
 ipv6_app = "fe80::1"
 udp_data = bytearray(52) # We create a 52 bytes of zeros
 
-uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_app, udp_data = udp_data)
+uncompressed = parser.generateIPv6UDP(comp_ruleID, dev_prefix, ipv6_app, udp_data = udp_data, dir = "DW")
 print(binascii.hexlify(uncompressed).decode('ascii'))
 
 JSON_Hint = {"RuleIDValue": comp_ruleID, 

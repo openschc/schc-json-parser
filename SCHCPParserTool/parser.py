@@ -64,11 +64,20 @@ class SCHCParser:
         dprint(iid)
         return iid
 
-    def generateIPv6UDP(self, comp_ruleID, dev_prefix = "fe80::" , ipv6_dst = "fe80::1", sport = 23616 , dport = 12400, udp_data = bytearray(50)):
+    def generateIPv6UDP(self, comp_ruleID, 
+                        dev_prefix = "fe80::" , 
+                        ipv6_dst = "fe80::1", 
+                        sport = 23616 , 
+                        dport = 12400, 
+                        udp_data = bytearray(50),
+                        dir = T_DIR_UP):
 
         rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=comp_ruleID)
 
         print(len(udp_data))
+
+        if comp_ruleID == 101:
+            dir = T_DIR_DW
 
         if rule is not None:
             #print(rule[T_COMP])
@@ -98,7 +107,6 @@ class SCHCParser:
                 dport = 12400
                 dev_prefix = "fe80::"
                 print("No compress")
-
             else:
                 return None
         
@@ -138,7 +146,7 @@ class SCHCParser:
 
         ipv6_udp = ipv6_h + udp 
 
-        if comp_ruleID == 101:
+        if dir == T_DIR_DW:
             ipv6_h = first + second + ip_dst + ip_src
             udp = h + g + i + j + udp_data
             ipv6_udp = ipv6_h + udp
@@ -819,10 +827,9 @@ class SCHCParser:
         else: # "NO COMPRESSION"
 
             parser = Parser(self)
-            t_dir = T_DIR_UP
 
             # We parse the IPv6 Packet
-            parsed_pkt, residue, parsing_error = parser.parse(schc_pkt[1:], t_dir, layers=["IPv6", "UDP"])
+            parsed_pkt, residue, parsing_error = parser.parse(schc_pkt[1:], dir, layers=["IPv6", "UDP"])
 
             keys = list(parsed_pkt.keys())
             values = list(parsed_pkt.values())
@@ -855,6 +862,11 @@ class SCHCParser:
             ipv6_pay_len = udp_len
             udp_data = bytearray(udp_len-8) # bytearray full of zeros
             chk_sum = SCHCParser.get_checksum(self.iid, sport, dport, udp_data, dev_prefix = dev_prefix, app_prefix = app_prefix, app_iid = app_iid)
+            dev_iid = self.iid
+
+            if dir == T_DIR_DW: #AA Downlink
+                dev_iid = app_iid_l
+                app_iid_l = self.iid
 
             dprint("chsm", chk_sum)
 
@@ -862,7 +874,7 @@ class SCHCParser:
                 try:
                     if YANG_ID[key[0]][1] == "fid-ipv6-deviid":
                         dprint("iid", values[i][0], self.iid)
-                        if values[i][0] == self.iid:
+                        if values[i][0] == dev_iid:
                             nocomp.update({YANG_ID[key[0]][1]: values[i][0]})
                         else:
                             nocomp.update({YANG_ID[key[0]][1]: "Not valid"})
@@ -1008,7 +1020,7 @@ class SCHCParser:
 
         # We create the headers TODO better
         wfcn = []
-        print ("len(fragments)", len(fragments))
+        dprint ("len(fragments)", len(fragments))
         if len(fragments) == 3:
             wfcn = ['00','10','01']
         else:
