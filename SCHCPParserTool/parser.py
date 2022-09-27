@@ -223,6 +223,7 @@ class SCHCParser:
         return l
 
     def tiles_missing(self, fcn = 62, w = 0, ack_req = False):
+        #print('bitmap', self.bitmap)
         
         missing = [[] for x in range(0,len(self.bitmap))] 
         w_all = []
@@ -238,7 +239,7 @@ class SCHCParser:
                     limit = len(a)
                 else:
                     limit = SCHCParser.get_lastpos(a)
-
+            dprint('limit', limit)
             
             for idx_b, x in enumerate(a[:limit]):
                 if x == 0:
@@ -251,9 +252,11 @@ class SCHCParser:
         dprint("missing",missing)
         dprint("w_all",w_all)
 
+        nb_missing = 0
+        for x in missing:
+            nb_missing =  nb_missing + sum(x)
 
-        
-        if len(missing) != 0:
+        if nb_missing != 0:
             return min(w_all, default=0), True
         else:
             return w, False
