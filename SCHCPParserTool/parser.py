@@ -248,9 +248,9 @@ class SCHCParser:
                     missing[w].append(idx_b)
         
         dprint("min w_all", min(w_all, default=0))
-        print("bitmap",self.bitmap)
-        print("missing",missing)
-        print("w_all",w_all)
+        dprint("bitmap",self.bitmap)
+        dprint("missing",missing)
+        dprint("w_all",w_all)
 
         nb_missing = 0
         for x in missing:
