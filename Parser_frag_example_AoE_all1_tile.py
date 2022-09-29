@@ -48,6 +48,7 @@ ack = SCHCParser.reassembly(parser, fragment = schc_parsed_05, tiles_all1 = True
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_06, tiles_all1 = True)
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_07, tiles_all1 = True)
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_all1_tiles, tiles_all1 = True)
+print(parser.bitmap)
 print(ack)
 
 # Session with tile inside all1 :

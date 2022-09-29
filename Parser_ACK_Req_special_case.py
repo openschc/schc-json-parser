@@ -29,22 +29,8 @@ schc_parsed_02 = SCHCParser.parse_schc_msg(parser, schc_pkt=second_frag)
 schc_parsed_03 = SCHCParser.parse_schc_msg(parser, schc_pkt=third_frag)
 print(schc_parsed_03)
 
-#schc_parsed_04 = SCHCParser.parse_schc_msg(parser, schc_pkt=forth_frag)
-#print(schc_parsed_04)
-#schc_parsed_05 = SCHCParser.parse_schc_msg(parser, schc_pkt=fifth_frag)
-#print(schc_parsed_05)
-#schc_parsed_06 = SCHCParser.parse_schc_msg(parser, schc_pkt=sixth_frag)
-#print(schc_parsed_06)
-#schc_parsed_07 = SCHCParser.parse_schc_msg(parser, schc_pkt=seventh_frag_tiles)
-#print(schc_parsed_07)
 schc_parsed_all1 = SCHCParser.parse_schc_msg(parser, schc_pkt=last_all1)
 #print(schc_parsed_all1_only)
-
-#ack_req = binascii.unhexlify("1400") # Requesting RuleID = 20, w = 00 
-#ack_req1 = binascii.unhexlify("1440") # Requesting RuleID = 20, w = 01 
-#ack_req_parsed0 = SCHCParser.parse_schc_msg(parser, schc_pkt=ack_req)
-#ack_req_parsed1 = SCHCParser.parse_schc_msg(parser, schc_pkt=ack_req1)
-#print(ack_req_parsed1)
 
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_01, tiles_all1 = True)
 print(ack)
@@ -56,9 +42,23 @@ print(parser.bitmap)
 ack = SCHCParser.reassembly(parser, fragment = schc_parsed_all1, tiles_all1 = True)
 #ack = SCHCParser.reassembly(parser, fragment = ack_req_parsed0, tiles_all1 = False)
 print(ack)
-rec1_frag = binascii.unhexlify("140e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+
+# DUT should reply with:
+
+rec1_frag = binascii.unhexlify("140e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
 rec1_frag_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=rec1_frag)
+print("rec1_frag_parsed", rec1_frag_parsed)
+
+# We create another ACK to get the tiles missing for the second window w=1
 ack = SCHCParser.reassembly(parser, fragment = rec1_frag_parsed, tiles_all1 = True)
+print(parser.bitmap)
+print(ack)
+
+# The DUT replies with this: FCN =62, W=1
+rec2_frag = binascii.unhexlify("147e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+rec2_frag_parsed = SCHCParser.parse_schc_msg(parser, schc_pkt=rec2_frag)
+print("rec2_frag_parsed", rec2_frag_parsed)
+ack = SCHCParser.reassembly(parser, fragment = rec2_frag_parsed, tiles_all1 = True)
 print(parser.bitmap)
 print(ack)
 

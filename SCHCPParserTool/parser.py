@@ -213,8 +213,21 @@ class SCHCParser:
 
     def get_lastpos(a): 
         l = len(a)
+        #print("l=", l)
         for x in reversed(a):
             if x == 0:
+                l -= 1
+                continue
+            else:
+                #print(x,l)
+                break
+        return l
+
+    def get_lastpos_compressed(a): 
+        l = len(a)
+        #print("l=", l)
+        for x in reversed(a):
+            if x == 1:
                 l -= 1
                 continue
             else:
@@ -276,7 +289,9 @@ class SCHCParser:
         #print("ack header + compressed bitmap", a)
         if tiles_missing or bad_rcs:
             #print(len(missing))
-            last = SCHCParser.get_lastpos(a)
+            last = SCHCParser.get_lastpos_compressed(a)
+            #print("a", a)
+            #print('last', last)
             bitmap_length = SCHCParser.bytes_needed(last) 
             #print("bitmap_length",bitmap_length)
             bitmap_str = "".join([str(_) for _ in a[:bitmap_length*8]])
