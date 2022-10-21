@@ -74,7 +74,7 @@ class SCHCParser:
 
         rule = self.rm.FindRuleFromRuleID(device=self.device_id, ruleID=comp_ruleID)
 
-        print(len(udp_data))
+        dprint(len(udp_data))
 
         if comp_ruleID == 101:
             dir = T_DIR_DW
@@ -106,12 +106,12 @@ class SCHCParser:
                 sport = 23616
                 dport = 12400
                 dev_prefix = "fe80::"
-                print("No compress")
+                dprint("No compress")
             else:
                 return None
         
         else:
-            print("Rule does not exist")
+            dprint("Rule does not exist")
             return None
 
         ipv6_src = dev_prefix + str(self.iid)[0:4] + ":" + str(self.iid)[4:8] + ":" + str(self.iid)[8:12] + ":" +str(self.iid)[12:16]
@@ -375,7 +375,7 @@ class SCHCParser:
             rcs_int = int(rcs, 16)
             rcs_check = rcs_pay == rcs_int
             c = 1
-            print("RCS check", rcs_pay, rcs_int, rcs_check)
+            dprint("RCS check", rcs_pay, rcs_int, rcs_check)
 
             if rcs_check == False:
                 payload = ""
@@ -421,7 +421,7 @@ class SCHCParser:
 
         if ack_req == True and tiles_missing == False and rcs_check == False:
             # Put the c bit to 0 indicating that there are missing tiles  
-            print("here bitmap", self.bitmap)
+            dprint("here bitmap", self.bitmap)
             c = 0
             ack = SCHCParser.generate_schc_ack (
                 self = self,
@@ -436,7 +436,7 @@ class SCHCParser:
                 tiles_missing = tiles_missing,
                 ack_req = ack_req)
 
-            print ('ack', ack)
+            dprint ('ack', ack)
             return ack
 
         if ack_req == True and tiles_missing == False:
@@ -455,7 +455,7 @@ class SCHCParser:
                 tiles_missing = tiles_missing,
                 ack_req = ack_req)
 
-            print ('ack', ack)
+            dprint ('ack', ack)
             return ack
 
         # The all1 has been already received and we receive another packet after, we re-inject the all1:
@@ -694,8 +694,8 @@ class SCHCParser:
             if dir == T_DIR_UP and mode == "AckAlways": # ACK or abort:
                 
                 bytes_as_bits = ''.join(format(byte, '08b') for byte in schc_pkt[1:])
-                w_value = bytes_as_bits[1]
-                c_value = bytes_as_bits[2]
+                w_value = bytes_as_bits[0]
+                c_value = bytes_as_bits[1]
                 ack = True # TODO
                 fcn_value = None
                 payload_hexa = None
@@ -982,7 +982,7 @@ class SCHCParser:
             rule, self.device_id = self.rm.FindRuleFromPacket(parsed_packet, direction=t_dir)
             dprint("rule",rule)
             if rule == None:
-                print("Rule does not match packet")
+                dprint("Rule does not match packet")
                 return None, None
 
             ruleid_value = rule[T_RULEID]
@@ -992,7 +992,7 @@ class SCHCParser:
                 json = self.parse_schc_msg(schc_packet_comp._content)
                 schc_packet = schc_packet_comp._content
             else:
-                print("Rule in packet does not match hint")
+                dprint("Rule in packet does not match hint")
                 return None, None
             dprint (schc_packet)
         else:
@@ -1004,7 +1004,7 @@ class SCHCParser:
                     if t_dir == T_DIR_DW: # Create Receiver Abort
                         receiver_abort = binascii.unhexlify("14ffff")
                         json = self.parse_schc_msg(schc_pkt = receiver_abort, dir = t_dir)
-                        print("ACK ON ERROR - Receiver Abort")
+                        dprint("ACK ON ERROR - Receiver Abort")
                     return json, receiver_abort
                 if rule['Fragmentation']['FRMode'] == 'AckAlways':
                     fragments, rcs, json = SCHCParser.fragment_ack_always(self, packet, hint['MTU'], rule_id, padding = padding)
@@ -1161,10 +1161,10 @@ class SCHCParser:
                 comp.update({"PaddingLength": pad_len})
             
             else:
-                print("RuleID is a compression rule but args does not match with the rule")
+                dprint("RuleID is a compression rule but args does not match with the rule")
                 return None
         else:
-            print("Not a compression RuleID")
+            dprint("Not a compression RuleID")
             return None 
 
         return comp
