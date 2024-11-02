@@ -1,5 +1,5 @@
 # schc-json-parser
-SCHC Library to parse an unparse LoRaWAN SCHC Packets into and from a JSON Format
+SCHC Library to parse and unparse LoRaWAN SCHC Packets into and from a JSON Format
 
 # To install the library
 
